@@ -1,0 +1,96 @@
+---
+description: Javascript in Defra
+globs: *.js
+---
+---
+description: Javascript API Standards
+globs: *.js
+---
+# JavaScript API Standards
+
+## Language & Runtime
+- Node.js LTS
+- JavaScript (ES2022+)
+- TypeScript for type checking only
+
+## Tech Stack
+- Hapi.js for API framework
+- Jest for testing
+- ESLint + Prettier
+- OpenAPI/Swagger for API documentation
+- convict for configuration
+
+## Code Standards
+- Use vanilla JavaScript with JSDoc type annotations
+- Use ES Modules with named exports
+- Use absolute imports with '~' alias
+- Follow RESTful API design principles
+- Use async/await for asynchronous operations
+- Implement proper error handling and logging
+
+## Project Structure
+```
+/src
+  /config/         # Configuration management
+  /api/           
+    /v1/           # API version
+      /{resource}/ # Resource modules
+        routes.js    # Route definitions
+        handler.js   # Request handlers
+        schema.js    # Joi validation schemas
+        service.js   # Business logic
+        model.js     # Data models
+        *.test.js   # Unit tests
+  /services/      # Shared services
+  /utils/         # Utility functions
+  /middleware/    # Custom middleware
+  /db/           # Database connections
+  server.js      # Server setup
+```
+
+## API Patterns
+- Use proper HTTP methods (GET, POST, PUT, DELETE)
+- Implement consistent error responses
+- Version APIs in URL (/api/v1/...)
+- Use query parameters for filtering/sorting
+- Implement pagination for list endpoints
+- Rate limiting on all endpoints
+- Request validation with Joi
+- Response validation with Joi
+
+## Error Handling
+- Use standardized error response format:
+```javascript
+{
+  statusCode: number,
+  error: string,
+  message: string,
+  details?: any
+}
+```
+- Log errors with appropriate severity
+- Handle async errors with try/catch
+- Use custom error classes for business logic
+
+## Security
+- Implement authentication middleware
+- Validate all inputs
+- Sanitize all outputs
+- Use CORS appropriately
+- Rate limiting
+- Request size limits
+- Security headers
+
+## Testing
+- Unit test all handlers and services
+- Integration tests for API endpoints
+- Mock external dependencies
+- Test error scenarios
+- Test input validation
+- Test authentication/authorization
+
+## Documentation
+- OpenAPI/Swagger documentation
+- JSDoc for all functions
+- README for setup/deployment
+- API changelog

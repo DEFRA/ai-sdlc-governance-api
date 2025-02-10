@@ -1,0 +1,140 @@
+---
+description: Playwright Testing
+globs: tests/*.js
+---
+ # Playwright Testing Standards
+
+This document outlines the standards and patterns for Playwright testing in our application.
+
+## Test File Structure
+
+- Test files should be placed in the `/tests` directory
+- Use `.spec.js` extension for test files
+- Group related tests using `test.describe()`
+- Use descriptive test names that explain the behavior being tested
+- Add comments to explain each step
+
+## Common Patterns
+
+```javascript
+import { test, expect } from '@playwright/test'
+import { navigateToHome, getGdsComponentText } from './test-helpers/index.js'
+
+test.describe('Feature Name', () => {
+  test.beforeEach(async ({ page }) => {
+    // Setup code here
+    await navigateToHome(page)
+  })
+
+  test('should [expected behavior]', async ({ page }) => {
+  })
+})
+```
+
+## Best Practices
+
+1. **Page Navigation**
+   - Use helper functions like `navigateToHome()` for common navigation
+   - Wait for critical elements using `page.waitForSelector()`
+
+2. **Selectors**
+   - Prefer role-based selectors: `page.getByRole('button', { name: 'Submit' })`
+   - Use GOV.UK Frontend class selectors when testing GDS components
+   - Store reusable selectors in test helpers
+
+3. **Assertions**
+   - Use clear, specific assertions
+   - Verify visibility: `await expect(element).toBeVisible()`
+   - Check content: `await expect(element).toContainText('expected text')`
+   - Validate page titles: `await expect(page).toHaveTitle(/Title Pattern/)`
+
+4. **Test Helpers**
+   - Create reusable helper functions for common operations
+   - Document helper functions with JSDoc comments
+   - Keep helpers focused and single-purpose
+
+## Configuration
+
+```javascript
+// playwright.config.js
+{
+  testDir: './tests',
+  fullyParallel: true,
+  retries: process.env.CI ? 2 : 0,
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure'
+  }
+}
+```
+
+## Error Handling
+
+- Use try-catch blocks for expected errors
+- Add meaningful error messages
+- Take screenshots on test failures
+
+## Debugging
+
+- Use `await page.pause()` for debugging
+- Enable trace viewer with `trace: 'on-first-retry'`
+- Use HTML reporter for detailed test results
+
+## GDS Component Testing
+
+### Helper Functions
+
+Any time a GDS Component is used add it to the `gds-components` helper
+
+For example:
+
+```javascript
+import { getGdsButton, getGdsErrorSummary } from './test-helpers/gds-components'
+```
+
+1. **Button Interactions**
+   - Use `getGdsButton()` to locate GDS buttons by text
+   ```javascript
+   const submitButton = await getGdsButton(page, 'Continue')
+   await submitButton.click()
+   ```
+
+3. **Error Handling**
+   - Use `getGdsErrorSummary()` to check for validation errors
+   ```javascript
+   const errorSummary = await getGdsErrorSummary(page)
+   await expect(errorSummary).toBeVisible()
+   ```
+
+### Best Practices for GDS Testing
+
+1. **Component Visibility**
+   - Always check if GDS components are visible before interacting
+   - Use appropriate waiting strategies for dynamic content
+
+2. **Error States**
+   - Test both valid and invalid form submissions
+   - Verify error message content matches GDS patterns
+   - Check error summary links navigate to correct fields
+
+3. **Accessibility**
+   - Test keyboard navigation through GDS components
+   - Verify ARIA attributes are present and correct
+   - Check focus management follows GDS patterns
+
+4. **Common Patterns**
+   ```javascript
+   test('should submit form with validation', async ({ page }) => {
+     // Fill form fields
+     await fillGdsField(page, 'Full name', 'John Smith')
+     
+     // Submit form
+     const submitButton = await getGdsButton(page, 'Continue')
+     await submitButton.click()
+     
+     // Check for success banner
+     const bannerText = await getGdsBannerText(page)
+     await expect(bannerText).toContain('Success')
+   })
+   ```

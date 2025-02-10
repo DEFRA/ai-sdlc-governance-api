@@ -1,0 +1,68 @@
+---
+description: Jest API testing
+globs: tests/*.js
+---
+---
+description: API Testing Standards
+globs: tests/*.js
+---
+# API Testing Standards
+
+## Test Structure
+```javascript
+import { describe, test, expect, beforeEach } from '@jest/globals'
+import { init } from '../server.js'
+
+describe('Resource API', () => {
+  let server
+
+  beforeEach(async () => {
+    server = await init()
+  })
+
+  afterEach(async () => {
+    await server.stop()
+  })
+
+  test('GET /api/v1/resource should return list', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/v1/resource'
+    })
+    expect(response.statusCode).toBe(200)
+  })
+})
+```
+
+## Testing Patterns
+- Test HTTP status codes
+- Test response payload structure
+- Test error scenarios
+- Test input validation
+- Test authentication/authorization
+- Mock external services
+- Use proper test isolation
+
+## Best Practices
+- One assertion per test
+- Clear test descriptions
+- Setup/teardown in beforeEach/afterEach
+- Clean test data between runs
+- Test edge cases
+- Test error handling
+- Use test factories for data creation
+
+## Integration Testing
+- Test complete request/response cycle
+- Test database interactions
+- Test external service integration
+- Test authentication flow
+- Test rate limiting
+- Test concurrent requests
+
+## Performance Testing
+- Response time benchmarks
+- Load testing critical endpoints
+- Memory usage monitoring
+- Connection pool behavior
+- Database query performance
