@@ -1,0 +1,3 @@
+[submodule "governance-admin-vault"]
+	path = governance-admin-vault
+	url = git@github.com:DEFRA/defra-ai-governance-tool-admin.git
