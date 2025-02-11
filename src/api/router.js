@@ -1,6 +1,6 @@
 import { health } from '~/src/api/health/index.js'
 import { example } from '~/src/api/example/index.js'
-import governanceTemplateRoutes from '~/src/api/governance-template/index.js'
+import governanceTemplateRoutes from '~/src/api/governance-templates/index.js'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 import HapiSwagger from 'hapi-swagger'

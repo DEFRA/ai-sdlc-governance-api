@@ -2,7 +2,8 @@ import {
   createGovernanceTemplateHandler,
   getGovernanceTemplateHandler,
   updateGovernanceTemplateHandler,
-  deleteGovernanceTemplateHandler
+  deleteGovernanceTemplateHandler,
+  getAllGovernanceTemplatesHandler
 } from './controller.js'
 import {
   createGovernanceTemplateSchema,
@@ -19,7 +20,7 @@ export default {
     server.route([
       {
         method: 'POST',
-        path: '/api/v1/governance-template',
+        path: '/api/v1/governance-templates',
         handler: createGovernanceTemplateHandler,
         options: {
           tags: ['api', 'governance-template'],
@@ -53,7 +54,7 @@ export default {
       },
       {
         method: 'GET',
-        path: '/api/v1/governance-template/{id}',
+        path: '/api/v1/governance-templates/{id}',
         handler: getGovernanceTemplateHandler,
         options: {
           tags: ['api', 'governance-template'],
@@ -86,7 +87,7 @@ export default {
       },
       {
         method: 'PUT',
-        path: '/api/v1/governance-template/{id}',
+        path: '/api/v1/governance-templates/{id}',
         handler: updateGovernanceTemplateHandler,
         options: {
           tags: ['api', 'governance-template'],
@@ -124,7 +125,7 @@ export default {
       },
       {
         method: 'DELETE',
-        path: '/api/v1/governance-template/{id}',
+        path: '/api/v1/governance-templates/{id}',
         handler: deleteGovernanceTemplateHandler,
         options: {
           tags: ['api', 'governance-template'],
@@ -141,6 +142,35 @@ export default {
                   description: 'Successfully deleted governance template'
                 },
                 404: { description: 'Template not found' },
+                400: { description: 'Bad request' }
+              }
+            }
+          }
+        }
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/governance-templates',
+        handler: getAllGovernanceTemplatesHandler,
+        options: {
+          tags: ['api', 'governance-template'],
+          description: 'Get all governance templates',
+          plugins: {
+            'hapi-swagger': {
+              responses: {
+                200: {
+                  description: 'Successfully retrieved governance templates',
+                  schema: Joi.array().items(
+                    Joi.object({
+                      _id: Joi.string(),
+                      version: Joi.string(),
+                      name: Joi.string(),
+                      description: Joi.string(),
+                      createdAt: Joi.date(),
+                      updatedAt: Joi.date()
+                    })
+                  )
+                },
                 400: { description: 'Bad request' }
               }
             }

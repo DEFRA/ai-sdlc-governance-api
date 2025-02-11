@@ -76,3 +76,15 @@ export const deleteGovernanceTemplateHandler = async (request, h) => {
     throw Boom.badRequest(error.message)
   }
 }
+
+export const getAllGovernanceTemplatesHandler = async (request, h) => {
+  try {
+    const templates = await request.db
+      .collection('governanceTemplates')
+      .find({})
+      .toArray()
+    return h.response(templates).code(200)
+  } catch (error) {
+    throw Boom.badRequest(error.message)
+  }
+}
