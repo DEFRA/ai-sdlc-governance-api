@@ -82,6 +82,7 @@ export const getAllGovernanceTemplatesHandler = async (request, h) => {
     const templates = await request.db
       .collection('governanceTemplates')
       .find({})
+      .sort({ createdAt: -1 })
       .toArray()
     return h.response(templates).code(200)
   } catch (error) {
