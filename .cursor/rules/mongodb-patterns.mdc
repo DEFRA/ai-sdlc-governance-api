@@ -39,6 +39,9 @@ export function createModel(data) {
 }
 ```
 
+## IDs
+- Always store foreign IDs as ObjectIds, NOT as strings
+
 ## Indexes
 - Defined in `src/api/common/helpers/mongodb.js`
 - Created on application startup
