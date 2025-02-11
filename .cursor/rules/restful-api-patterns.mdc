@@ -1,0 +1,146 @@
+---
+description: Restful API Patterns
+globs: *.js,*.tsx
+---
+ ---
+description: RESTful API Implementation Patterns
+globs: src/api/**/*.js
+---
+# RESTful API Implementation Patterns
+
+## Route Structure
+- Group routes by resource in `/api/v1/{resource}/`
+- Use plural nouns for resource names (e.g. `templates`, `users`)
+- Implement standard CRUD operations:
+  - GET /resource - List all
+  - POST /resource - Create new
+  - GET /resource/{id} - Get one
+  - PUT /resource/{id} - Update one
+  - DELETE /resource/{id} - Delete one
+
+## File Organization
+```
+/api/v1/{resource}/
+  routes.js      # Route definitions
+  handler.js     # Request handlers
+  schema.js      # Joi validation schemas
+  service.js     # Business logic
+  model.js       # Data model & factory functions
+```
+
+## Route Definition Pattern
+```javascript
+export default {
+  name: 'resource',
+  register: async (server) => {
+    server.route([
+      {
+        method: 'GET',
+        path: '/api/v1/resource',
+        handler: handlers.getAll,
+        options: {
+          tags: ['api'],
+          validate: {
+            query: schemas.list
+          }
+        }
+      },
+      {
+        method: 'GET',
+        path: '/api/v1/resource/{id}',
+        handler: handlers.getById,
+        options: {
+          tags: ['api'],
+          validate: {
+            params: schemas.id
+          }
+        }
+      }
+    ])
+  }
+}
+```
+
+## HTTP Status Codes
+- 200: Successful GET/PUT with response body
+- 201: Successful POST with new resource
+- 204: Successful DELETE (no response body)
+- 400: Bad request / validation error
+- 404: Resource not found
+- 409: Conflict (e.g. duplicate entry)
+- 500: Server error
+
+## Handler Pattern
+```javascript
+export async function deleteResource(request, h) {
+  const { id } = request.params
+  await service.deleteResource(request.db, id)
+  return h.response().code(204)
+}
+
+export async function createResource(request, h) {
+  const result = await service.createResource(request.db, request.payload)
+  return h.response(result).code(201)
+}
+```
+
+## Service Layer Pattern
+```javascript
+export async function getResource(db, id) {
+  const result = await db
+    .collection('resources')
+    .findOne({ _id: new ObjectId(id) })
+  
+  if (!result) {
+    throw Boom.notFound('Resource not found')
+  }
+  
+  return result
+}
+```
+
+## Validation Schema Pattern
+```javascript
+export const schemas = {
+  id: Joi.object({
+    id: Joi.string().required()
+  }),
+  create: Joi.object({
+    name: Joi.string().required(),
+    description: Joi.string()
+  })
+}
+```
+
+## Query Parameters
+- Use consistent parameter names:
+  - `page`: Page number for pagination
+  - `limit`: Items per page
+  - `sort`: Sort field
+  - `order`: Sort direction (asc/desc)
+  - `filter`: Filter criteria
+  - `fields`: Field selection
+
+## Response Envelope
+```javascript
+{
+  data: [],           // Resource data
+  meta: {            // Optional metadata
+    total: number,
+    page: number,
+    limit: number
+  }
+}
+```
+
+## Best Practices
+1. Use plural nouns for resource endpoints
+2. Return 204 for successful DELETE operations
+3. Include validation for all inputs
+4. Use service layer for business logic
+5. Implement proper error handling
+6. Use consistent response formats
+7. Document with OpenAPI/Swagger
+8. Include proper CORS headers
+9. Implement rate limiting
+10. Version APIs in URL path

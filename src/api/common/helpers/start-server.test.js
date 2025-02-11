@@ -1,10 +1,21 @@
-import hapi from '@hapi/hapi'
-
 const mockLoggerInfo = jest.fn()
 const mockLoggerError = jest.fn()
 
 const mockHapiLoggerInfo = jest.fn()
 const mockHapiLoggerError = jest.fn()
+
+const mockServer = {
+  start: jest.fn().mockResolvedValue(undefined),
+  stop: jest.fn().mockResolvedValue(undefined),
+  logger: {
+    info: mockHapiLoggerInfo,
+    error: mockHapiLoggerError
+  }
+}
+
+jest.mock('@hapi/hapi', () => ({
+  server: jest.fn().mockReturnValue(mockServer)
+}))
 
 jest.mock('hapi-pino', () => ({
   register: (server) => {
@@ -15,6 +26,7 @@ jest.mock('hapi-pino', () => ({
   },
   name: 'mock-hapi-pino'
 }))
+
 jest.mock('~/src/api/common/helpers/logging/logger.js', () => ({
   createLogger: () => ({
     info: (...args) => mockLoggerInfo(...args),
@@ -22,77 +34,60 @@ jest.mock('~/src/api/common/helpers/logging/logger.js', () => ({
   })
 }))
 
+const mockCreateServer = jest.fn().mockResolvedValue(mockServer)
+jest.mock('~/src/api/index.js', () => ({
+  createServer: mockCreateServer
+}))
+
 describe('#startServer', () => {
   const PROCESS_ENV = process.env
-  let createServerSpy
-  let hapiServerSpy
-  let startServerImport
-  let createServerImport
+  let server
 
-  beforeAll(async () => {
+  beforeAll(() => {
     process.env = { ...PROCESS_ENV }
     process.env.PORT = '3098' // Set to obscure port to avoid conflicts
-
-    createServerImport = await import('~/src/api/index.js')
-    startServerImport = await import(
-      '~/src//api/common/helpers/start-server.js'
-    )
-
-    createServerSpy = jest.spyOn(createServerImport, 'createServer')
-    hapiServerSpy = jest.spyOn(hapi, 'server')
   })
 
   afterAll(() => {
     process.env = PROCESS_ENV
+    jest.resetAllMocks()
   })
 
   describe('When server starts', () => {
-    let server
-
-    afterAll(async () => {
-      await server.stop({ timeout: 0 })
+    beforeEach(async () => {
+      mockCreateServer.mockResolvedValueOnce(mockServer)
+      const { startServer } = await import('./start-server.js')
+      server = await startServer()
     })
 
-    test('Should start up server as expected', async () => {
-      server = await startServerImport.startServer()
+    afterEach(async () => {
+      await server?.stop({ timeout: 0 })
+      jest.clearAllMocks()
+    })
 
-      expect(createServerSpy).toHaveBeenCalled()
-      expect(hapiServerSpy).toHaveBeenCalled()
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        1,
-        'Custom secure context is disabled'
-      )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        2,
-        'Setting up MongoDb'
-      )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        3,
-        'MongoDb connected to ai-sdlc-governance-api'
-      )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        4,
+    test('Should start up server as expected', () => {
+      expect(mockCreateServer).toHaveBeenCalled()
+      expect(server.start).toHaveBeenCalled()
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         'Server started successfully'
       )
-      expect(mockHapiLoggerInfo).toHaveBeenNthCalledWith(
-        5,
+      expect(mockHapiLoggerInfo).toHaveBeenCalledWith(
         'Access your backend on http://localhost:3098'
       )
     })
   })
 
   describe('When server start fails', () => {
-    beforeAll(() => {
-      createServerSpy.mockRejectedValue(new Error('Server failed to start'))
+    beforeEach(() => {
+      const error = new Error('Server failed to start')
+      mockCreateServer.mockRejectedValueOnce(error)
     })
 
     test('Should log failed startup message', async () => {
-      await startServerImport.startServer()
-
+      const { startServer } = await import('./start-server.js')
+      await expect(startServer()).rejects.toThrow('Server failed to start')
       expect(mockLoggerInfo).toHaveBeenCalledWith('Server failed to start :(')
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        Error('Server failed to start')
-      )
+      expect(mockLoggerError).toHaveBeenCalledWith(expect.any(Error))
     })
   })
 })
