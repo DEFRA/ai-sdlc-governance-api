@@ -1,0 +1,128 @@
+---
+description: MongoDB and Data Model Patterns
+globs: src/api/**/*.js
+---
+# MongoDB and Data Model Patterns
+
+## MongoDB Setup
+- Uses native MongoDB driver (not Mongoose)
+- Connection managed by `mongodb.js` plugin
+- MongoDB client available via:
+  - `server.db` - For server-level access
+  - `request.db` - For request handlers
+  - `server.locker` - For MongoDB locks
+  - `request.locker` - For request-level locks
+
+## Collection Naming
+- Use camelCase for collection names
+- Suffix with plural form (e.g., `governanceTemplates`)
+- Collection names defined in model files
+- Example: `collection: 'governanceTemplates'`
+
+## Data Models
+- Models defined in `model.js` files
+- Use TypeScript-style JSDoc for type definitions
+- Factory functions for creating documents
+- Example structure:
+```javascript
+/**
+ * @typedef {object} ModelName
+ * @property {string} field1
+ * @property {string} field2
+ */
+
+export function createModel(data) {
+  return {
+    field1: data.field1,
+    field2: data.field2
+  }
+}
+```
+
+## Indexes
+- Defined in `src/api/common/helpers/mongodb.js`
+- Created on application startup
+- Use compound indexes for uniqueness constraints
+- Example:
+```javascript
+await db.collection('collectionName').createIndex(
+  { field1: 1, field2: 1 },
+  { unique: true }
+)
+```
+
+## Controllers
+- Use native MongoDB operations
+- Access DB via `request.db`
+- Common operations:
+  - `collection.insertOne()` - Create
+  - `collection.findOne()` - Read
+  - `collection.findOneAndUpdate()` - Update
+  - `collection.deleteOne()` - Delete
+- Handle MongoDB errors:
+  - `error.code === 11000` for duplicates
+  - Use Boom for HTTP errors
+
+## Example Usage
+```javascript
+// Model Definition
+/**
+ * @typedef {object} Template
+ * @property {string} name
+ * @property {string} version
+ */
+
+export function createTemplate(data) {
+  return {
+    name: data.name,
+    version: data.version
+  }
+}
+
+// Controller Usage
+async function handler(request, h) {
+  const doc = createTemplate(request.payload)
+  const result = await request.db
+    .collection('templates')
+    .insertOne(doc)
+  return h.response({ ...doc, _id: result.insertedId })
+}
+```
+
+## Validation
+- Use Joi schemas for input validation
+- Define schemas in `validation.js`
+- Validate in route configuration
+- Example:
+```javascript
+const schema = Joi.object({
+  name: Joi.string().required(),
+  version: Joi.string().required()
+})
+```
+
+## Error Handling
+- Use Boom for HTTP errors
+- Handle MongoDB specific errors:
+```javascript
+try {
+  await collection.insertOne(doc)
+} catch (error) {
+  if (error.code === 11000) {
+    throw Boom.conflict('Duplicate entry')
+  }
+  throw Boom.badRequest(error.message)
+}
+```
+
+## Best Practices
+1. Always use factory functions for document creation
+2. Define TypeScript-style JSDoc types
+3. Use MongoDB indexes for constraints
+4. Handle MongoDB-specific error codes
+5. Use request.db for database access
+6. Follow collection naming conventions
+7. Document all model properties
+8. Use Joi for input validation
+9. Return clean errors via Boom
+10. Use MongoDB's native features over application logic 
