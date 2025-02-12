@@ -64,7 +64,7 @@ export default {
 ## HTTP Status Codes
 - 200: Successful GET/PUT with response body
 - 201: Successful POST with new resource
-- 204: Successful DELETE (no response body)
+- 204: Successful DELETE (no response body) - Always use for successful DELETE operations, even if resource didn't exist
 - 400: Bad request / validation error
 - 404: Resource not found
 - 409: Conflict (e.g. duplicate entry)
@@ -75,6 +75,7 @@ export default {
 export async function deleteResource(request, h) {
   const { id } = request.params
   await service.deleteResource(request.db, id)
+  // Always return 204 for DELETE, regardless of whether resource existed
   return h.response().code(204)
 }
 
@@ -135,7 +136,7 @@ export const schemas = {
 
 ## Best Practices
 1. Use plural nouns for resource endpoints
-2. Return 204 for successful DELETE operations
+2. Return 204 for successful DELETE operations - Do not check if resource existed, always return 204 on successful execution
 3. Include validation for all inputs
 4. Use service layer for business logic
 5. Implement proper error handling
