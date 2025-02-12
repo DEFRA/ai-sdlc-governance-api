@@ -2,6 +2,7 @@ import { health } from '~/src/api/health/index.js'
 import { example } from '~/src/api/example/index.js'
 import governanceTemplateRoutes from '~/src/api/governance-templates/index.js'
 import workflowTemplateRoutes from '~/src/api/workflow-templates/index.js'
+import checklistItemTemplateRoutes from '~/src/api/checklist-item-templates/index.js'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 import HapiSwagger from 'hapi-swagger'
@@ -66,7 +67,8 @@ const router = {
       await server.register([
         example,
         governanceTemplateRoutes,
-        workflowTemplateRoutes
+        workflowTemplateRoutes,
+        checklistItemTemplateRoutes
       ])
     }
   }

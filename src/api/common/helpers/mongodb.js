@@ -76,6 +76,15 @@ async function createIndexes(db) {
   await db
     .collection('workflowTemplates')
     .createIndex({ governanceTemplateId: 1, name: 1 }, { unique: true })
+
+  // Create indexes for checklist item templates
+  await db
+    .collection('checklistItemTemplates')
+    .createIndex({ workflowTemplateId: 1 })
+  await db.collection('checklistItemTemplates').createIndex({ itemKey: 1 })
+  await db
+    .collection('checklistItemTemplates')
+    .createIndex({ workflowTemplateId: 1, itemKey: 1 }, { unique: true })
 }
 
 /**
