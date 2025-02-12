@@ -40,7 +40,10 @@ export default {
                     name: Joi.string(),
                     description: Joi.string(),
                     type: Joi.string(),
-                    dependencies: Joi.object(),
+                    dependencies: Joi.object({
+                      requires: Joi.array().items(Joi.string()),
+                      requiredBy: Joi.array().items(Joi.string())
+                    }),
                     metadata: Joi.object(),
                     createdAt: Joi.date(),
                     updatedAt: Joi.date()
@@ -51,6 +54,38 @@ export default {
                 409: {
                   description: 'Item with this key already exists in workflow'
                 }
+              },
+              payloadType: 'json',
+              validate: {
+                payload: Joi.object({
+                  workflowTemplateId: Joi.string()
+                    .required()
+                    .example('60d21bbfe3d5d533d9fc1e4c'),
+                  itemKey: Joi.string().required().example('approvalDoc'),
+                  name: Joi.string()
+                    .required()
+                    .example('Upload Approval Document'),
+                  description: Joi.string()
+                    .required()
+                    .example(
+                      'Checklist item for uploading an approval document'
+                    ),
+                  type: Joi.string()
+                    .required()
+                    .valid('approval', 'document', 'task')
+                    .example('approval'),
+                  dependencies: Joi.object({
+                    requires: Joi.array()
+                      .items(Joi.string())
+                      .default([])
+                      .example(['docReview']),
+                    requiredBy: Joi.array()
+                      .items(Joi.string())
+                      .default([])
+                      .example(['finalApproval'])
+                  }).default({}),
+                  metadata: Joi.object().default({}).example({})
+                })
               }
             }
           }
