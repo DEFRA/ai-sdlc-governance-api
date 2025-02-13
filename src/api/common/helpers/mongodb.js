@@ -94,12 +94,15 @@ async function createSchemaValidations(db) {
       collection: 'governanceTemplates',
       schema: {
         bsonType: 'object',
-        required: ['name', 'version'],
+        required: ['name', 'version', 'createdAt', 'updatedAt'],
         additionalProperties: false,
         properties: {
           _id: { bsonType: 'objectId' },
           name: { bsonType: 'string' },
-          version: { bsonType: 'string' }
+          version: { bsonType: 'string' },
+          description: { bsonType: 'string' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
         }
       }
     },
@@ -107,12 +110,16 @@ async function createSchemaValidations(db) {
       collection: 'workflowTemplates',
       schema: {
         bsonType: 'object',
-        required: ['governanceTemplateId', 'name'],
+        required: ['governanceTemplateId', 'name', 'createdAt', 'updatedAt'],
         additionalProperties: false,
         properties: {
           _id: { bsonType: 'objectId' },
           governanceTemplateId: { bsonType: 'objectId' },
-          name: { bsonType: 'string' }
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string' },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
         }
       }
     },
@@ -120,12 +127,26 @@ async function createSchemaValidations(db) {
       collection: 'checklistItemTemplates',
       schema: {
         bsonType: 'object',
-        required: ['workflowTemplateId', 'itemKey'],
+        required: [
+          'workflowTemplateId',
+          'itemKey',
+          'name',
+          'type',
+          'createdAt',
+          'updatedAt'
+        ],
         additionalProperties: false,
         properties: {
           _id: { bsonType: 'objectId' },
           workflowTemplateId: { bsonType: 'objectId' },
-          itemKey: { bsonType: 'string' }
+          itemKey: { bsonType: 'string' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string' },
+          type: { bsonType: 'string' },
+          dependencies: { bsonType: 'object' },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
         }
       }
     }

@@ -7,9 +7,21 @@ import {
 } from './controller.js'
 import {
   createGovernanceTemplateSchema,
-  updateGovernanceTemplateSchema
+  updateGovernanceTemplateSchema,
+  idSchema
 } from './validation.js'
 import Joi from 'joi'
+
+const governanceTemplateResponseSchema = Joi.object({
+  _id: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .description('MongoDB ObjectId'),
+  version: Joi.string(),
+  name: Joi.string(),
+  description: Joi.string(),
+  createdAt: Joi.date(),
+  updatedAt: Joi.date()
+})
 
 /**
  * @type { import('@hapi/hapi').Plugin<void> }
@@ -33,14 +45,7 @@ export default {
               responses: {
                 200: {
                   description: 'Successfully created governance template',
-                  schema: Joi.object({
-                    _id: Joi.string(),
-                    version: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
-                  })
+                  schema: governanceTemplateResponseSchema
                 },
                 400: { description: 'Bad request' },
                 409: {
@@ -60,23 +65,14 @@ export default {
           tags: ['api', 'governance-template'],
           description: 'Get a governance template by ID',
           validate: {
-            params: Joi.object({
-              id: Joi.string().required().description('Governance template ID')
-            })
+            params: idSchema
           },
           plugins: {
             'hapi-swagger': {
               responses: {
                 200: {
                   description: 'Successfully retrieved governance template',
-                  schema: Joi.object({
-                    _id: Joi.string(),
-                    version: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
-                  })
+                  schema: governanceTemplateResponseSchema
                 },
                 404: { description: 'Template not found' },
                 400: { description: 'Bad request' }
@@ -93,9 +89,7 @@ export default {
           tags: ['api', 'governance-template'],
           description: 'Update a governance template',
           validate: {
-            params: Joi.object({
-              id: Joi.string().required().description('Governance template ID')
-            }),
+            params: idSchema,
             payload: updateGovernanceTemplateSchema
           },
           plugins: {
@@ -103,14 +97,7 @@ export default {
               responses: {
                 200: {
                   description: 'Successfully updated governance template',
-                  schema: Joi.object({
-                    _id: Joi.string(),
-                    version: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
-                  })
+                  schema: governanceTemplateResponseSchema
                 },
                 404: { description: 'Template not found' },
                 400: { description: 'Bad request' },
@@ -131,9 +118,7 @@ export default {
           tags: ['api', 'governance-template'],
           description: 'Delete a governance template',
           validate: {
-            params: Joi.object({
-              id: Joi.string().required().description('Governance template ID')
-            })
+            params: idSchema
           },
           plugins: {
             'hapi-swagger': {
@@ -160,16 +145,7 @@ export default {
               responses: {
                 200: {
                   description: 'Successfully retrieved governance templates',
-                  schema: Joi.array().items(
-                    Joi.object({
-                      _id: Joi.string(),
-                      version: Joi.string(),
-                      name: Joi.string(),
-                      description: Joi.string(),
-                      createdAt: Joi.date(),
-                      updatedAt: Joi.date()
-                    })
-                  )
+                  schema: Joi.array().items(governanceTemplateResponseSchema)
                 },
                 400: { description: 'Bad request' }
               }
