@@ -30,6 +30,7 @@ export const mongoDb = {
       const locker = new LockManager(db.collection('mongo-locks'))
 
       await createIndexes(db)
+      await createSchemaValidations(db)
 
       server.logger.info(`MongoDb connected to ${databaseName}`)
 
@@ -85,6 +86,71 @@ async function createIndexes(db) {
   await db
     .collection('checklistItemTemplates')
     .createIndex({ workflowTemplateId: 1, itemKey: 1 }, { unique: true })
+}
+
+async function createSchemaValidations(db) {
+  const validations = [
+    {
+      collection: 'governanceTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['name', 'version'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          version: { bsonType: 'string' }
+        }
+      }
+    },
+    {
+      collection: 'workflowTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['governanceTemplateId', 'name'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          governanceTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['workflowTemplateId', 'itemKey'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          itemKey: { bsonType: 'string' }
+        }
+      }
+    }
+  ]
+
+  for (const { collection, schema } of validations) {
+    try {
+      await db.command({
+        collMod: collection,
+        validator: { $jsonSchema: schema },
+        validationLevel: 'strict',
+        validationAction: 'error'
+      })
+    } catch (error) {
+      if (error.codeName === 'NamespaceNotFound') {
+        await db.createCollection(collection, {
+          validator: { $jsonSchema: schema },
+          validationLevel: 'strict',
+          validationAction: 'error'
+        })
+      } else {
+        throw error
+      }
+    }
+  }
 }
 
 /**
