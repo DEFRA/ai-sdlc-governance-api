@@ -1,23 +1,28 @@
 import { test, expect } from '@playwright/test'
 
-const workflowTemplate = {
-  name: 'Test Workflow Template',
+const getUniqueId = () =>
+  `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+
+const createWorkflowTemplate = (uniqueId) => ({
+  name: `Test Workflow Template ${uniqueId}`,
   description: 'Test workflow template for E2E testing',
   metadata: {
     category: 'test',
     priority: 'high'
   }
-}
+})
 
 test.describe('Workflow Template API', () => {
   let governanceTemplateId
   let workflowTemplateId
+  const uniqueId = getUniqueId()
+  const workflowTemplate = createWorkflowTemplate(uniqueId)
 
   test.beforeAll(async ({ request }) => {
     // Create a governance template for testing
     const response = await request.post('/api/v1/governance-templates', {
       data: {
-        name: 'Test Governance Template',
+        name: `Test Governance Template ${uniqueId}`,
         version: '1.0.0',
         description: 'Test governance template for workflow tests'
       }
@@ -88,10 +93,11 @@ test.describe('Workflow Template API', () => {
   test('should cascade delete checklist items when deleting workflow template', async ({
     request
   }) => {
+    const cascadeUniqueId = getUniqueId()
     // Create a new workflow template specifically for testing deletion
     const workflowResponse = await request.post('/api/v1/workflow-templates', {
       data: {
-        name: 'Cascade Delete Test Workflow',
+        name: `Cascade Delete Test Workflow ${cascadeUniqueId}`,
         description: 'Testing cascade deletion',
         governanceTemplateId,
         metadata: { test: true }
@@ -108,7 +114,7 @@ test.describe('Workflow Template API', () => {
       '/api/v1/checklist-item-templates',
       {
         data: {
-          name: 'First Checklist Template',
+          name: `First Checklist Template ${cascadeUniqueId}`,
           description: 'Testing cascade deletion',
           type: 'approval',
           workflowTemplateId: cascadeWorkflowId,
@@ -126,7 +132,7 @@ test.describe('Workflow Template API', () => {
         '/api/v1/checklist-item-templates',
         {
           data: {
-            name: `Dependent Checklist Template ${i}`,
+            name: `Dependent Checklist Template ${cascadeUniqueId}-${i}`,
             description: 'Testing cascade deletion',
             type: 'approval',
             workflowTemplateId: cascadeWorkflowId,

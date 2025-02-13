@@ -1,13 +1,18 @@
 import { test, expect } from '@playwright/test'
 
-const governanceTemplate = {
-  name: 'Test Governance Template',
+const getUniqueId = () =>
+  `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+
+const createGovernanceTemplate = (uniqueId) => ({
+  name: `Test Governance Template ${uniqueId}`,
   version: '1.0.0',
   description: 'Test governance template for E2E testing'
-}
+})
 
 test.describe('Governance Template API', () => {
   let governanceTemplateId
+  const uniqueId = getUniqueId()
+  const governanceTemplate = createGovernanceTemplate(uniqueId)
 
   test.afterAll(async ({ request }) => {
     if (governanceTemplateId) {
@@ -64,10 +69,11 @@ test.describe('Governance Template API', () => {
   test('should cascade delete workflow templates and checklist items when deleting governance template', async ({
     request
   }) => {
+    const cascadeUniqueId = getUniqueId()
     // Create a new governance template specifically for testing deletion
     const govResponse = await request.post('/api/v1/governance-templates', {
       data: {
-        name: 'Cascade Delete Test Template',
+        name: `Cascade Delete Test Template ${cascadeUniqueId}`,
         version: '2.0.0',
         description: 'Testing cascade deletion'
       }
@@ -84,7 +90,7 @@ test.describe('Governance Template API', () => {
         '/api/v1/workflow-templates',
         {
           data: {
-            name: `Workflow Template ${i}`,
+            name: `Workflow Template ${cascadeUniqueId}-${i}`,
             description: 'Testing cascade deletion',
             governanceTemplateId: cascadeGovId,
             metadata: { test: true }
@@ -101,7 +107,7 @@ test.describe('Governance Template API', () => {
           '/api/v1/checklist-item-templates',
           {
             data: {
-              name: `Checklist Template ${i}-${j}`,
+              name: `Checklist Template ${cascadeUniqueId}-${i}-${j}`,
               description: 'Testing cascade deletion',
               type: 'approval',
               workflowTemplateId: workflowId,

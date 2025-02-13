@@ -1,15 +1,18 @@
 /* eslint-disable */
 import { test, expect } from '@playwright/test'
 
-const checklistItemTemplate = {
-  name: 'Test Checklist Item Template',
+const getUniqueId = () =>
+  `test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+
+const createChecklistItemTemplate = (uniqueId) => ({
+  name: `Test Checklist Item Template ${uniqueId}`,
   description: 'Test checklist item template for E2E testing',
   type: 'approval',
   metadata: {
     approver: 'manager',
     requiredEvidence: true
   }
-}
+})
 
 test.describe('Checklist Item Template API', () => {
   let governanceTemplateId
@@ -17,12 +20,14 @@ test.describe('Checklist Item Template API', () => {
   let checklistItemTemplateId
   let dependentTemplateId
   let dependencyTemplateId
+  const uniqueId = getUniqueId()
+  const checklistItemTemplate = createChecklistItemTemplate(uniqueId)
 
   test.beforeAll(async ({ request }) => {
     // Create a governance template for testing
     const govResponse = await request.post('/api/v1/governance-templates', {
       data: {
-        name: 'Test Governance Template',
+        name: `Test Governance Template ${uniqueId}`,
         version: '1.0.0',
         description: 'Test governance template for checklist tests'
       }
@@ -42,7 +47,7 @@ test.describe('Checklist Item Template API', () => {
     // Create a workflow template for testing
     const workflowResponse = await request.post('/api/v1/workflow-templates', {
       data: {
-        name: 'Test Workflow Template',
+        name: `Test Workflow Template ${uniqueId}`,
         description: 'Test workflow template for checklist tests',
         governanceTemplateId,
         metadata: {
@@ -118,7 +123,7 @@ test.describe('Checklist Item Template API', () => {
   }) => {
     // First create a template that will be a dependency
     const dependencyData = {
-      name: 'Dependency Template',
+      name: `Dependency Template ${uniqueId}`,
       description: 'This template will be a dependency',
       type: 'approval',
       workflowTemplateId,
@@ -153,7 +158,7 @@ test.describe('Checklist Item Template API', () => {
     expect(updatedTemplate.dependencies_requires).toHaveLength(1)
     expect(updatedTemplate.dependencies_requires[0]).toMatchObject({
       _id: dependencyTemplateId,
-      name: 'Dependency Template'
+      name: `Dependency Template ${uniqueId}`
     })
   })
 
@@ -161,7 +166,7 @@ test.describe('Checklist Item Template API', () => {
     request
   }) => {
     const dependentData = {
-      name: 'Dependent Template',
+      name: `Dependent Template ${uniqueId}`,
       description: 'This template depends on the main template',
       type: 'approval',
       workflowTemplateId,
@@ -191,7 +196,7 @@ test.describe('Checklist Item Template API', () => {
     expect(mainTemplate.dependencies_requiredBy).toContainEqual(
       expect.objectContaining({
         _id: dependentTemplateId,
-        name: 'Dependent Template'
+        name: `Dependent Template ${uniqueId}`
       })
     )
   })
@@ -210,14 +215,14 @@ test.describe('Checklist Item Template API', () => {
     expect(template.dependencies_requires).toHaveLength(1)
     expect(template.dependencies_requires[0]).toMatchObject({
       _id: dependencyTemplateId,
-      name: 'Dependency Template'
+      name: `Dependency Template ${uniqueId}`
     })
 
     // Verify dependencies_requiredBy is populated
     expect(template.dependencies_requiredBy).toHaveLength(1)
     expect(template.dependencies_requiredBy[0]).toMatchObject({
       _id: dependentTemplateId,
-      name: 'Dependent Template'
+      name: `Dependent Template ${uniqueId}`
     })
   })
 
@@ -244,7 +249,7 @@ test.describe('Checklist Item Template API', () => {
     expect(updatedTemplate.dependencies_requiredBy).toHaveLength(1)
     expect(updatedTemplate.dependencies_requiredBy[0]).toMatchObject({
       _id: dependentTemplateId,
-      name: 'Dependent Template'
+      name: `Dependent Template ${uniqueId}`
     })
   })
 })
