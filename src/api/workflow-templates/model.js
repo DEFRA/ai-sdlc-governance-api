@@ -29,7 +29,7 @@ export function createWorkflowTemplate(data) {
         : data.governanceTemplateId,
     name: data.name,
     description: data.description,
-    metadata: data.metadata || {},
+    metadata: data.metadata ?? {},
     createdAt: now,
     updatedAt: now
   }
