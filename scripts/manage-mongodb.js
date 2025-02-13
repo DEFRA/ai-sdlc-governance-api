@@ -3,13 +3,11 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
-import { config } from 'dotenv'
 import { fileURLToPath } from 'url'
+import { config } from '../src/config/index.js'
 
 // Use __filename for potential future path resolution needs
 fileURLToPath(import.meta.url)
-
-config()
 
 class MongoHandler {
   constructor() {
@@ -19,13 +17,13 @@ class MongoHandler {
 
   async connect() {
     try {
-      const uri = process.env.MONGO_URI
+      const uri = config.get('mongoUri')
       if (!uri) {
-        throw new Error('MONGO_URI environment variable is not set')
+        throw new Error('MongoDB URI not configured')
       }
 
       this.client = await MongoClient.connect(uri)
-      this.db = this.client.db(process.env.MONGO_INITDB_DATABASE)
+      this.db = this.client.db(config.get('mongoDatabase'))
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error'
