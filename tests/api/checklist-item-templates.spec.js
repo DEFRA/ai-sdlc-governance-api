@@ -252,4 +252,66 @@ test.describe('Checklist Item Template API', () => {
       name: `Dependent Template ${uniqueId}`
     })
   })
+
+  test('should filter checklist item templates by workflowTemplateId', async ({
+    request
+  }) => {
+    // Create another workflow template for testing filtering
+    const anotherWorkflowResponse = await request.post(
+      '/api/v1/workflow-templates',
+      {
+        data: {
+          name: `Another Workflow Template ${uniqueId}`,
+          description: 'Another workflow template for filter tests',
+          governanceTemplateId,
+          metadata: { test: true }
+        }
+      }
+    )
+    expect(anotherWorkflowResponse.ok()).toBeTruthy()
+    const anotherWorkflowId = (await anotherWorkflowResponse.json())._id
+
+    // Create a checklist item for the new workflow
+    const anotherChecklistResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Another Checklist Template ${uniqueId}`,
+          description: 'Another checklist template for filter tests',
+          type: 'approval',
+          workflowTemplateId: anotherWorkflowId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(anotherChecklistResponse.ok()).toBeTruthy()
+    const anotherChecklistId = (await anotherChecklistResponse.json())._id
+
+    // Test filtering by original workflowTemplateId
+    const filterResponse = await request.get(
+      `/api/v1/checklist-item-templates?workflowTemplateId=${workflowTemplateId}`
+    )
+    expect(filterResponse.ok()).toBeTruthy()
+    const filteredData = await filterResponse.json()
+
+    // Verify filtered results
+    expect(Array.isArray(filteredData)).toBeTruthy()
+    expect(filteredData.length).toBeGreaterThan(0)
+    expect(
+      filteredData.every(
+        (template) => template.workflowTemplateId === workflowTemplateId
+      )
+    ).toBeTruthy()
+    expect(
+      filteredData.some(
+        (template) => template.workflowTemplateId === anotherWorkflowId
+      )
+    ).toBeFalsy()
+
+    // Clean up
+    await request.delete(
+      `/api/v1/checklist-item-templates/${anotherChecklistId}`
+    )
+    await request.delete(`/api/v1/workflow-templates/${anotherWorkflowId}`)
+  })
 })

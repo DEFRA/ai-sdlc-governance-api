@@ -97,7 +97,9 @@ export const getAllWorkflowTemplatesHandler = async (request, h) => {
   try {
     const query = {}
     if (request.query.governanceTemplateId) {
-      query.governanceTemplateId = request.query.governanceTemplateId
+      query.governanceTemplateId = new ObjectId(
+        request.query.governanceTemplateId
+      )
     }
 
     const templates = await request.db

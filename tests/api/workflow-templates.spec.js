@@ -159,4 +159,62 @@ test.describe('Workflow Template API', () => {
       expect(checklistResponse.status()).toBe(404)
     }
   })
+
+  test('should filter workflow templates by governanceTemplateId', async ({
+    request
+  }) => {
+    // Create another governance template for testing filtering
+    const anotherGovResponse = await request.post(
+      '/api/v1/governance-templates',
+      {
+        data: {
+          name: `Another Gov Template ${uniqueId}`,
+          version: '1.0.0',
+          description: 'Another governance template for filter tests'
+        }
+      }
+    )
+    expect(anotherGovResponse.ok()).toBeTruthy()
+    const anotherGovId = (await anotherGovResponse.json())._id
+
+    // Create another workflow template with the new governance template
+    const anotherWorkflowResponse = await request.post(
+      '/api/v1/workflow-templates',
+      {
+        data: {
+          name: `Another Workflow Template ${uniqueId}`,
+          description: 'Another workflow template for filter tests',
+          governanceTemplateId: anotherGovId,
+          metadata: { test: true }
+        }
+      }
+    )
+    expect(anotherWorkflowResponse.ok()).toBeTruthy()
+    const anotherWorkflowId = (await anotherWorkflowResponse.json())._id
+
+    // Test filtering by original governanceTemplateId
+    const filterResponse = await request.get(
+      `/api/v1/workflow-templates?governanceTemplateId=${governanceTemplateId}`
+    )
+    expect(filterResponse.ok()).toBeTruthy()
+    const filteredData = await filterResponse.json()
+
+    // Verify filtered results
+    expect(Array.isArray(filteredData)).toBeTruthy()
+    expect(filteredData.length).toBeGreaterThan(0)
+    expect(
+      filteredData.every(
+        (template) => template.governanceTemplateId === governanceTemplateId
+      )
+    ).toBeTruthy()
+    expect(
+      filteredData.some(
+        (template) => template.governanceTemplateId === anotherGovId
+      )
+    ).toBeFalsy()
+
+    // Clean up
+    await request.delete(`/api/v1/workflow-templates/${anotherWorkflowId}`)
+    await request.delete(`/api/v1/governance-templates/${anotherGovId}`)
+  })
 })
