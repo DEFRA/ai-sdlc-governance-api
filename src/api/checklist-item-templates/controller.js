@@ -67,11 +67,19 @@ export const getChecklistItemTemplateHandler = async (request, h) => {
 export const updateChecklistItemTemplateHandler = async (request, h) => {
   try {
     const now = new Date()
+    const updatePayload = { ...request.payload }
+
+    // Convert dependencies_requires to ObjectIds if present
+    if (updatePayload.dependencies_requires) {
+      updatePayload.dependencies_requires =
+        updatePayload.dependencies_requires.map((id) => new ObjectId(id))
+    }
+
     const result = await request.db
       .collection('checklistItemTemplates')
       .findOneAndUpdate(
         { _id: new ObjectId(request.params.id) },
-        { $set: { ...request.payload, updatedAt: now } },
+        { $set: { ...updatePayload, updatedAt: now } },
         { returnDocument: 'after' }
       )
 

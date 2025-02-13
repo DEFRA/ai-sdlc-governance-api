@@ -84,4 +84,73 @@ test.describe('Workflow Template API', () => {
     const data = await response.json()
     expect(data.description).toBe(updatedTemplate.description)
   })
+
+  test('should cascade delete checklist items when deleting workflow template', async ({
+    request
+  }) => {
+    // Create a new workflow template specifically for testing deletion
+    const workflowResponse = await request.post('/api/v1/workflow-templates', {
+      data: {
+        name: 'Cascade Delete Test Workflow',
+        description: 'Testing cascade deletion',
+        governanceTemplateId,
+        metadata: { test: true }
+      }
+    })
+    expect(workflowResponse.ok()).toBeTruthy()
+    const cascadeWorkflowId = (await workflowResponse.json())._id
+
+    // Create multiple checklist items with dependencies between them
+    const checklistIds = []
+
+    // Create first checklist item
+    const firstChecklistResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: 'First Checklist Template',
+          description: 'Testing cascade deletion',
+          type: 'approval',
+          workflowTemplateId: cascadeWorkflowId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(firstChecklistResponse.ok()).toBeTruthy()
+    const firstChecklistId = (await firstChecklistResponse.json())._id
+    checklistIds.push(firstChecklistId)
+
+    // Create dependent checklist items
+    for (let i = 0; i < 2; i++) {
+      const checklistResponse = await request.post(
+        '/api/v1/checklist-item-templates',
+        {
+          data: {
+            name: `Dependent Checklist Template ${i}`,
+            description: 'Testing cascade deletion',
+            type: 'approval',
+            workflowTemplateId: cascadeWorkflowId,
+            dependencies_requires: [firstChecklistId] // These depend on the first checklist item
+          }
+        }
+      )
+      expect(checklistResponse.ok()).toBeTruthy()
+      checklistIds.push((await checklistResponse.json())._id)
+    }
+
+    // Delete the workflow template
+    const deleteResponse = await request.delete(
+      `/api/v1/workflow-templates/${cascadeWorkflowId}`
+    )
+    expect(deleteResponse.ok()).toBeTruthy()
+
+    // Verify that all checklist items have been deleted
+    for (const checklistId of checklistIds) {
+      const checklistResponse = await request.get(
+        `/api/v1/checklist-item-templates/${checklistId}`
+      )
+      expect(checklistResponse.ok()).toBeFalsy()
+      expect(checklistResponse.status()).toBe(404)
+    }
+  })
 })

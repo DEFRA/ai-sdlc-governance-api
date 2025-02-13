@@ -63,13 +63,35 @@ export const updateGovernanceTemplateHandler = async (request, h) => {
 
 export const deleteGovernanceTemplateHandler = async (request, h) => {
   try {
+    const governanceId = new ObjectId(request.params.id)
+
+    // Find all workflow templates for this governance template
+    const workflowTemplates = await request.db
+      .collection('workflowTemplates')
+      .find({ governanceTemplateId: governanceId })
+      .toArray()
+
+    // Delete all associated checklist items for each workflow template
+    for (const workflow of workflowTemplates) {
+      await request.db
+        .collection('checklistItemTemplates')
+        .deleteMany({ workflowTemplateId: workflow._id })
+    }
+
+    // Delete all workflow templates
+    await request.db
+      .collection('workflowTemplates')
+      .deleteMany({ governanceTemplateId: governanceId })
+
+    // Delete the governance template
     const result = await request.db
       .collection('governanceTemplates')
-      .deleteOne({ _id: new ObjectId(request.params.id) })
+      .deleteOne({ _id: governanceId })
 
     if (result.deletedCount === 0) {
       throw Boom.notFound('Governance template not found')
     }
+
     return h.response().code(204)
   } catch (error) {
     if (error.isBoom) throw error

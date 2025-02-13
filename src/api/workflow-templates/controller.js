@@ -70,9 +70,21 @@ export const updateWorkflowTemplateHandler = async (request, h) => {
 
 export const deleteWorkflowTemplateHandler = async (request, h) => {
   try {
+    const workflowId = new ObjectId(request.params.id)
+
+    // Delete all associated checklist items
     await request.db
+      .collection('checklistItemTemplates')
+      .deleteMany({ workflowTemplateId: workflowId })
+
+    // Delete the workflow template
+    const result = await request.db
       .collection('workflowTemplates')
-      .deleteOne({ _id: new ObjectId(request.params.id) })
+      .deleteOne({ _id: workflowId })
+
+    if (result.deletedCount === 0) {
+      throw Boom.notFound('Workflow template not found')
+    }
 
     return h.response().code(204)
   } catch (error) {

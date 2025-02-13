@@ -60,4 +60,82 @@ test.describe('Governance Template API', () => {
     const data = await response.json()
     expect(data.description).toBe(updatedTemplate.description)
   })
+
+  test('should cascade delete workflow templates and checklist items when deleting governance template', async ({
+    request
+  }) => {
+    // Create a new governance template specifically for testing deletion
+    const govResponse = await request.post('/api/v1/governance-templates', {
+      data: {
+        name: 'Cascade Delete Test Template',
+        version: '2.0.0',
+        description: 'Testing cascade deletion'
+      }
+    })
+    expect(govResponse.ok()).toBeTruthy()
+    const cascadeGovId = (await govResponse.json())._id
+
+    // Create multiple workflow templates
+    const workflowIds = []
+    const checklistIds = []
+
+    for (let i = 0; i < 2; i++) {
+      const workflowResponse = await request.post(
+        '/api/v1/workflow-templates',
+        {
+          data: {
+            name: `Workflow Template ${i}`,
+            description: 'Testing cascade deletion',
+            governanceTemplateId: cascadeGovId,
+            metadata: { test: true }
+          }
+        }
+      )
+      expect(workflowResponse.ok()).toBeTruthy()
+      const workflowId = (await workflowResponse.json())._id
+      workflowIds.push(workflowId)
+
+      // Create checklist items for each workflow
+      for (let j = 0; j < 2; j++) {
+        const checklistResponse = await request.post(
+          '/api/v1/checklist-item-templates',
+          {
+            data: {
+              name: `Checklist Template ${i}-${j}`,
+              description: 'Testing cascade deletion',
+              type: 'approval',
+              workflowTemplateId: workflowId,
+              dependencies_requires: []
+            }
+          }
+        )
+        expect(checklistResponse.ok()).toBeTruthy()
+        checklistIds.push((await checklistResponse.json())._id)
+      }
+    }
+
+    // Delete the governance template
+    const deleteResponse = await request.delete(
+      `/api/v1/governance-templates/${cascadeGovId}`
+    )
+    expect(deleteResponse.ok()).toBeTruthy()
+
+    // Verify that all workflow templates have been deleted
+    for (const workflowId of workflowIds) {
+      const workflowResponse = await request.get(
+        `/api/v1/workflow-templates/${workflowId}`
+      )
+      expect(workflowResponse.ok()).toBeFalsy()
+      expect(workflowResponse.status()).toBe(404)
+    }
+
+    // Verify that all checklist items have been deleted
+    for (const checklistId of checklistIds) {
+      const checklistResponse = await request.get(
+        `/api/v1/checklist-item-templates/${checklistId}`
+      )
+      expect(checklistResponse.ok()).toBeFalsy()
+      expect(checklistResponse.status()).toBe(404)
+    }
+  })
 })
