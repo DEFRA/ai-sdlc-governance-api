@@ -49,6 +49,14 @@ export const getChecklistItemTemplateHandler = async (request, h) => {
       template.dependencies_requires = dependencies
     }
 
+    // Find all templates that require this template
+    const requiredBy = await request.db
+      .collection('checklistItemTemplates')
+      .find({ dependencies_requires: template._id })
+      .toArray()
+
+    template.dependencies_requiredBy = requiredBy
+
     return h.response(template).code(200)
   } catch (error) {
     if (error.isBoom) throw error
@@ -83,6 +91,14 @@ export const updateChecklistItemTemplateHandler = async (request, h) => {
 
       result.dependencies_requires = dependencies
     }
+
+    // Find all templates that require this template
+    const requiredBy = await request.db
+      .collection('checklistItemTemplates')
+      .find({ dependencies_requires: result._id })
+      .toArray()
+
+    result.dependencies_requiredBy = requiredBy
 
     return h.response(result).code(200)
   } catch (error) {
@@ -134,6 +150,14 @@ export const getAllChecklistItemTemplatesHandler = async (request, h) => {
 
         template.dependencies_requires = dependencies
       }
+
+      // Find all templates that require this template
+      const requiredBy = await request.db
+        .collection('checklistItemTemplates')
+        .find({ dependencies_requires: template._id })
+        .toArray()
+
+      template.dependencies_requiredBy = requiredBy
     }
 
     return h.response(templates).code(200)

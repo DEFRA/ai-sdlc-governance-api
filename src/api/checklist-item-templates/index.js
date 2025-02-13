@@ -103,6 +103,19 @@ export default {
                     description: Joi.string(),
                     type: Joi.string(),
                     dependencies_requires: Joi.array().items(Joi.string()),
+                    dependencies_requiredBy: Joi.array().items(
+                      Joi.object({
+                        _id: Joi.string(),
+                        workflowTemplateId: Joi.string(),
+                        name: Joi.string(),
+                        description: Joi.string(),
+                        type: Joi.string(),
+                        dependencies_requires: Joi.array().items(Joi.string()),
+                        metadata: Joi.object(),
+                        createdAt: Joi.date(),
+                        updatedAt: Joi.date()
+                      })
+                    ),
                     metadata: Joi.object(),
                     createdAt: Joi.date(),
                     updatedAt: Joi.date()
@@ -209,6 +222,21 @@ export default {
                       description: Joi.string(),
                       type: Joi.string(),
                       dependencies_requires: Joi.array().items(Joi.string()),
+                      dependencies_requiredBy: Joi.array().items(
+                        Joi.object({
+                          _id: Joi.string(),
+                          workflowTemplateId: Joi.string(),
+                          name: Joi.string(),
+                          description: Joi.string(),
+                          type: Joi.string(),
+                          dependencies_requires: Joi.array().items(
+                            Joi.string()
+                          ),
+                          metadata: Joi.object(),
+                          createdAt: Joi.date(),
+                          updatedAt: Joi.date()
+                        })
+                      ),
                       metadata: Joi.object(),
                       createdAt: Joi.date(),
                       updatedAt: Joi.date()
