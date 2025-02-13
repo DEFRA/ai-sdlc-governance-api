@@ -82,10 +82,6 @@ async function createIndexes(db) {
   await db
     .collection('checklistItemTemplates')
     .createIndex({ workflowTemplateId: 1 })
-  await db.collection('checklistItemTemplates').createIndex({ itemKey: 1 })
-  await db
-    .collection('checklistItemTemplates')
-    .createIndex({ workflowTemplateId: 1, itemKey: 1 }, { unique: true })
 }
 
 async function createSchemaValidations(db) {
@@ -129,7 +125,6 @@ async function createSchemaValidations(db) {
         bsonType: 'object',
         required: [
           'workflowTemplateId',
-          'itemKey',
           'name',
           'type',
           'createdAt',
@@ -139,11 +134,13 @@ async function createSchemaValidations(db) {
         properties: {
           _id: { bsonType: 'objectId' },
           workflowTemplateId: { bsonType: 'objectId' },
-          itemKey: { bsonType: 'string' },
           name: { bsonType: 'string' },
           description: { bsonType: 'string' },
           type: { bsonType: 'string' },
-          dependencies: { bsonType: 'object' },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
           metadata: { bsonType: 'object' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }

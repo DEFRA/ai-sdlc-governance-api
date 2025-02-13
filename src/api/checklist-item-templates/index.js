@@ -36,24 +36,17 @@ export default {
                   schema: Joi.object({
                     _id: Joi.string(),
                     workflowTemplateId: Joi.string(),
-                    itemKey: Joi.string(),
                     name: Joi.string(),
                     description: Joi.string(),
                     type: Joi.string(),
-                    dependencies: Joi.object({
-                      requires: Joi.array().items(Joi.string()),
-                      requiredBy: Joi.array().items(Joi.string())
-                    }),
+                    dependencies_requires: Joi.array().items(Joi.string()),
                     metadata: Joi.object(),
                     createdAt: Joi.date(),
                     updatedAt: Joi.date()
                   })
                 },
                 400: { description: 'Bad request' },
-                404: { description: 'Workflow template not found' },
-                409: {
-                  description: 'Item with this key already exists in workflow'
-                }
+                404: { description: 'Workflow template not found' }
               },
               payloadType: 'json',
               validate: {
@@ -61,7 +54,6 @@ export default {
                   workflowTemplateId: Joi.string()
                     .required()
                     .example('60d21bbfe3d5d533d9fc1e4c'),
-                  itemKey: Joi.string().required().example('approvalDoc'),
                   name: Joi.string()
                     .required()
                     .example('Upload Approval Document'),
@@ -74,16 +66,10 @@ export default {
                     .required()
                     .valid('approval', 'document', 'task')
                     .example('approval'),
-                  dependencies: Joi.object({
-                    requires: Joi.array()
-                      .items(Joi.string())
-                      .default([])
-                      .example(['docReview']),
-                    requiredBy: Joi.array()
-                      .items(Joi.string())
-                      .default([])
-                      .example(['finalApproval'])
-                  }).default({}),
+                  dependencies_requires: Joi.array()
+                    .items(Joi.string())
+                    .default([])
+                    .example(['60d21bbfe3d5d533d9fc1e4d']),
                   metadata: Joi.object().default({}).example({})
                 })
               }
@@ -113,11 +99,10 @@ export default {
                   schema: Joi.object({
                     _id: Joi.string(),
                     workflowTemplateId: Joi.string(),
-                    itemKey: Joi.string(),
                     name: Joi.string(),
                     description: Joi.string(),
                     type: Joi.string(),
-                    dependencies: Joi.object(),
+                    dependencies_requires: Joi.array().items(Joi.string()),
                     metadata: Joi.object(),
                     createdAt: Joi.date(),
                     updatedAt: Joi.date()
@@ -153,21 +138,17 @@ export default {
                   schema: Joi.object({
                     _id: Joi.string(),
                     workflowTemplateId: Joi.string(),
-                    itemKey: Joi.string(),
                     name: Joi.string(),
                     description: Joi.string(),
                     type: Joi.string(),
-                    dependencies: Joi.object(),
+                    dependencies_requires: Joi.array().items(Joi.string()),
                     metadata: Joi.object(),
                     createdAt: Joi.date(),
                     updatedAt: Joi.date()
                   })
                 },
                 404: { description: 'Template not found' },
-                400: { description: 'Bad request' },
-                409: {
-                  description: 'Item with this key already exists in workflow'
-                }
+                400: { description: 'Bad request' }
               }
             }
           }
@@ -224,11 +205,10 @@ export default {
                     Joi.object({
                       _id: Joi.string(),
                       workflowTemplateId: Joi.string(),
-                      itemKey: Joi.string(),
                       name: Joi.string(),
                       description: Joi.string(),
                       type: Joi.string(),
-                      dependencies: Joi.object(),
+                      dependencies_requires: Joi.array().items(Joi.string()),
                       metadata: Joi.object(),
                       createdAt: Joi.date(),
                       updatedAt: Joi.date()
