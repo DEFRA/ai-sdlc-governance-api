@@ -1,0 +1,6 @@
+tests/**/*.spec.js
+tests/**/*.test.js
+playwright-report/**/*
+.server/**/*
+coverage/**/*
+node_modules/**/* 

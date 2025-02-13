@@ -2,139 +2,103 @@
 description: Playwright Testing
 globs: tests/*.js
 ---
- # Playwright Testing Standards
+# Playwright Testing Rules
 
-This document outlines the standards and patterns for Playwright testing in our application.
+## Testing Philosophy
+- Focus on user-visible behavior and outcomes rather than internal implementation details.
+- Keep tests isolated, independent, and reflective of end-to-end user journeys.
+- Test server-rendered content and interactive behaviors from a user's perspective.
+- Ensure tests remain robust by avoiding strict mode locator violations through specific and scoped selectors.
 
-## Test File Structure
+## Testing Strategy
 
-- Test files should be placed in the `/tests` directory
-- Use `.spec.js` extension for test files
-- Group related tests using `test.describe()`
-- Use descriptive test names that explain the behavior being tested
-- Add comments to explain each step
+### Element Scoping and Selectors
+- Always scope element checks to their containing parent to avoid matching multiple elements.
+- Use relative selectors and `:has()` filters to narrow down to specific instances (e.g., table rows, details components).
+- Refine selectors with regex for whitespace and exact text when needed.
+- Avoid global page-level selectors for nested elements.
 
-## Common Patterns
+#### Selector Priority
+1. Role-based selectors with exact text, e.g., `getByRole('button', { name: 'Submit', exact: true })`
+2. ARIA label selectors, e.g., `getByLabel('Search')`
+3. Component-specific class selectors with context filtering, e.g., `locator('.govuk-details__summary-text', { hasText: /Summary Text/ })`
+4. Scoped locators using `:has()` and `filter()` for parent-child relationships.
+5. Generic text matching as the last resort, e.g., `getByText('Content')`
 
-```javascript
-import { test, expect } from '@playwright/test'
-import { navigateToHome, getGdsComponentText } from './test-helpers/index.js'
+### State and Interaction Testing
+- Verify both initial and changed states of interactive components.
+- Test interactive behaviors like clicking to expand/collapse a details component and verify resulting state changes (e.g., checking for the `open` attribute).
+- Test keyboard interactions, attribute changes, and error states.
+- Ensure tests cover both default views and dynamic transitions.
 
-test.describe('Feature Name', () => {
-  test.beforeEach(async ({ page }) => {
-    // Setup code here
-    await navigateToHome(page)
-  })
-
-  test('should [expected behavior]', async ({ page }) => {
-  })
-})
-```
-
-## Best Practices
-
-1. **Page Navigation**
-   - Use helper functions like `navigateToHome()` for common navigation
-   - Wait for critical elements using `page.waitForSelector()`
-
-2. **Selectors**
-   - Prefer role-based selectors: `page.getByRole('button', { name: 'Submit' })`
-   - Use GOV.UK Frontend class selectors when testing GDS components
-   - Store reusable selectors in test helpers
-
-3. **Assertions**
-   - Use clear, specific assertions
-   - Verify visibility: `await expect(element).toBeVisible()`
-   - Check content: `await expect(element).toContainText('expected text')`
-   - Validate page titles: `await expect(page).toHaveTitle(/Title Pattern/)`
-
-4. **Test Helpers**
-   - Create reusable helper functions for common operations
-   - Document helper functions with JSDoc comments
-   - Keep helpers focused and single-purpose
-
-## Configuration
-
-```javascript
-// playwright.config.js
-{
-  testDir: './tests',
-  fullyParallel: true,
-  retries: process.env.CI ? 2 : 0,
-  use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure'
-  }
-}
-```
-
-## Error Handling
-
-- Use try-catch blocks for expected errors
-- Add meaningful error messages
-- Take screenshots on test failures
-
-## Debugging
-
-- Use `await page.pause()` for debugging
-- Enable trace viewer with `trace: 'on-first-retry'`
-- Use HTML reporter for detailed test results
+## Test Structure
+- Place tests in the `/tests` directory with a `.spec.js` extension.
+- Group related tests using `test.describe()`.
+- Use `test.beforeEach()` for common setup steps.
+- Write clear, descriptive test names (e.g., "should display error message when API fails").
+- Always use ES Module syntax with named imports (e.g. `import { test, expect } from '@playwright/test';`).
 
 ## GDS Component Testing
 
-### Helper Functions
+### Common GDS Component Selectors
+- **Details Component:**
+  ```javascript
+  // Target summary text within a details component
+  page.locator('span.govuk-details__summary-text', { hasText: /Summary Text/ });
+  // Target content within the details component
+  page.locator('div.govuk-details__text').filter({ hasText: /Content Text/ });
+  ```
+- **Table Component:**
+  ```javascript
+  // Target table by accessible caption or role
+  page.getByRole('table', { name: 'Caption Text' });
+  // Target a specific row using role and text
+  page.getByRole('row', { name: 'Row Content' });
+  // Use scoped selectors within a row
+  const row = page.getByRole('row', { name: 'Row Content' });
+  row.locator('.govuk-tag');
+  ```
+- **Tags:**
+  ```javascript
+  // Target a tag with specific text
+  page.locator('.govuk-tag', { hasText: 'Tag Text' });
+  // Verify tag color variants with regex matching
+  await expect(tag).toHaveClass(/govuk-tag--blue/);
+  await expect(tag).toHaveClass(/govuk-tag--green/);
+  await expect(tag).toHaveClass(/govuk-tag--red/);
+  ```
+- **Buttons:**
+  ```javascript
+  page.getByRole('button', { name: 'Button Text' });
+  ```
 
-Any time a GDS Component is used add it to the `gds-components` helper
+### GDS Component Testing Patterns
+- **Details Component:**
+  - Test summary text visibility.
+  - Test expand/collapse functionality by clicking the summary and asserting the open attribute.
+  - Verify that the expanded content renders the expected text.
+  - Include keyboard accessibility tests.
+- **Tables:**
+  - Verify the presence of captions, headers, and cell content.
+  - Check responsive behavior using scoped selectors for rows.
+- **Form Components:**
+  - Test validation messages and error summaries.
+  - Verify correct display of hint texts and input states.
 
-For example:
+### Accessibility Testing
+- Integrate axe-core (e.g., using `@axe-core/playwright`) to run automated accessibility scans.
+- Test keyboard navigation flows and focus management.
+- Verify that screen reader announcements are correct.
+- Check for meeting color contrast standards and proper ARIA attributes.
+- Example:
+  ```javascript
+  import AxeBuilder from '@axe-core/playwright';
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+  ```
 
-```javascript
-import { getGdsButton, getGdsErrorSummary } from './test-helpers/gds-components'
-```
-
-1. **Button Interactions**
-   - Use `getGdsButton()` to locate GDS buttons by text
-   ```javascript
-   const submitButton = await getGdsButton(page, 'Continue')
-   await submitButton.click()
-   ```
-
-3. **Error Handling**
-   - Use `getGdsErrorSummary()` to check for validation errors
-   ```javascript
-   const errorSummary = await getGdsErrorSummary(page)
-   await expect(errorSummary).toBeVisible()
-   ```
-
-### Best Practices for GDS Testing
-
-1. **Component Visibility**
-   - Always check if GDS components are visible before interacting
-   - Use appropriate waiting strategies for dynamic content
-
-2. **Error States**
-   - Test both valid and invalid form submissions
-   - Verify error message content matches GDS patterns
-   - Check error summary links navigate to correct fields
-
-3. **Accessibility**
-   - Test keyboard navigation through GDS components
-   - Verify ARIA attributes are present and correct
-   - Check focus management follows GDS patterns
-
-4. **Common Patterns**
-   ```javascript
-   test('should submit form with validation', async ({ page }) => {
-     // Fill form fields
-     await fillGdsField(page, 'Full name', 'John Smith')
-     
-     // Submit form
-     const submitButton = await getGdsButton(page, 'Continue')
-     await submitButton.click()
-     
-     // Check for success banner
-     const bannerText = await getGdsBannerText(page)
-     await expect(bannerText).toContain('Success')
-   })
-   ```
+### Server-Side Testing Considerations
+- Test complete user journeys including form submissions, redirects, and session handling.
+- Verify that server-rendered content is correct.
+- Include tests for error pages and status codes.
+- Ensure that navigation flows are smooth and predictable across the application.
