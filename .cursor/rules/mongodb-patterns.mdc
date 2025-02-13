@@ -39,6 +39,39 @@ export function createModel(data) {
 }
 ```
 
+## Schema Validation
+- Schema validation defined in `createSchemaValidation` function
+- Uses MongoDB's $jsonSchema validator
+- Enforces strict validation on all collections
+- Validation rules:
+  - Required fields must be present
+  - Field types must match specified BSON types
+  - Enums enforce allowed values
+  - ObjectIds for references
+  - Dates for timestamps
+- Example schema:
+```javascript
+await db.command({
+  collMod: 'collectionName',
+  validator: {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: ['field1', 'field2'],
+      properties: {
+        field1: { bsonType: 'string' },
+        field2: { bsonType: 'date' },
+        status: { 
+          bsonType: 'string',
+          enum: ['active', 'inactive']
+        }
+      }
+    }
+  },
+  validationLevel: 'strict',
+  validationAction: 'error'
+})
+```
+
 ## IDs
 - Always store foreign IDs as ObjectIds, NOT as strings
 
@@ -128,4 +161,5 @@ try {
 7. Document all model properties
 8. Use Joi for input validation
 9. Return clean errors via Boom
-10. Use MongoDB's native features over application logic 
+10. Use MongoDB's native features over application logic
+11. Enforce schema validation at database level 
