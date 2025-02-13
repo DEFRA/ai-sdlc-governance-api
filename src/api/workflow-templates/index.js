@@ -34,13 +34,20 @@ export default {
                 200: {
                   description: 'Successfully created workflow template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    governanceTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    governanceTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Development Workflow'),
+                    description: Joi.string().example(
+                      'Workflow for developing and validating AI models'
+                    ),
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'development'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 400: { description: 'Bad request' },
@@ -69,13 +76,20 @@ export default {
                 200: {
                   description: 'Successfully retrieved workflow template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    governanceTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    governanceTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Development Workflow'),
+                    description: Joi.string().example(
+                      'Workflow for developing and validating AI models'
+                    ),
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'development'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 404: { description: 'Template not found' },
@@ -104,13 +118,20 @@ export default {
                 200: {
                   description: 'Successfully updated workflow template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    governanceTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    governanceTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Development Workflow'),
+                    description: Joi.string().example(
+                      'Workflow for developing and validating AI models'
+                    ),
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'development'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 404: { description: 'Template not found' },
@@ -153,9 +174,9 @@ export default {
           description: 'Get all workflow templates',
           validate: {
             query: Joi.object({
-              governanceTemplateId: Joi.string().description(
-                'Filter by governance template ID'
-              )
+              governanceTemplateId: Joi.string()
+                .description('Filter by governance template ID')
+                .example('60d21bbfe3d5d533d9fc1e4c')
             })
           },
           plugins: {
@@ -165,13 +186,20 @@ export default {
                   description: 'Successfully retrieved workflow templates',
                   schema: Joi.array().items(
                     Joi.object({
-                      _id: Joi.string(),
-                      governanceTemplateId: Joi.string(),
-                      name: Joi.string(),
-                      description: Joi.string(),
-                      metadata: Joi.object(),
-                      createdAt: Joi.date(),
-                      updatedAt: Joi.date()
+                      _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                      governanceTemplateId: Joi.string().example(
+                        '60d21bbfe3d5d533d9fc1e4d'
+                      ),
+                      name: Joi.string().example('Model Development Workflow'),
+                      description: Joi.string().example(
+                        'Workflow for developing and validating AI models'
+                      ),
+                      metadata: Joi.object().example({
+                        priority: 'high',
+                        category: 'development'
+                      }),
+                      createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                      updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                     })
                   )
                 },

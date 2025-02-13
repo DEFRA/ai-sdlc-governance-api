@@ -34,15 +34,47 @@ export default {
                 201: {
                   description: 'Successfully created checklist item template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    workflowTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    type: Joi.string(),
-                    dependencies_requires: Joi.array().items(Joi.string()),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    workflowTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Validation'),
+                    description: Joi.string().example(
+                      'Validate the AI model performance and fairness'
+                    ),
+                    type: Joi.string().example('task'),
+                    dependencies_requires: Joi.array()
+                      .items(Joi.string())
+                      .example(['60d21bbfe3d5d533d9fc1e4e']),
+                    dependencies_requiredBy: Joi.array().items(
+                      Joi.object({
+                        _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4f'),
+                        workflowTemplateId: Joi.string().example(
+                          '60d21bbfe3d5d533d9fc1e4d'
+                        ),
+                        name: Joi.string().example('Model Deployment'),
+                        description: Joi.string().example(
+                          'Deploy the validated AI model'
+                        ),
+                        type: Joi.string().example('approval'),
+                        dependencies_requires: Joi.array()
+                          .items(Joi.string())
+                          .example(['60d21bbfe3d5d533d9fc1e4c']),
+                        metadata: Joi.object().example({ priority: 'high' }),
+                        createdAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        ),
+                        updatedAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        )
+                      })
+                    ),
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'validation'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 400: { description: 'Bad request' },
@@ -53,7 +85,7 @@ export default {
                 payload: Joi.object({
                   workflowTemplateId: Joi.string()
                     .required()
-                    .example('60d21bbfe3d5d533d9fc1e4c'),
+                    .example('60d21bbfe3d5d533d9fc1e4d'),
                   name: Joi.string()
                     .required()
                     .example('Upload Approval Document'),
@@ -97,28 +129,47 @@ export default {
                 200: {
                   description: 'Successfully retrieved checklist item template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    workflowTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    type: Joi.string(),
-                    dependencies_requires: Joi.array().items(Joi.string()),
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    workflowTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Validation'),
+                    description: Joi.string().example(
+                      'Validate the AI model performance and fairness'
+                    ),
+                    type: Joi.string().example('task'),
+                    dependencies_requires: Joi.array()
+                      .items(Joi.string())
+                      .example(['60d21bbfe3d5d533d9fc1e4e']),
                     dependencies_requiredBy: Joi.array().items(
                       Joi.object({
-                        _id: Joi.string(),
-                        workflowTemplateId: Joi.string(),
-                        name: Joi.string(),
-                        description: Joi.string(),
-                        type: Joi.string(),
-                        dependencies_requires: Joi.array().items(Joi.string()),
-                        metadata: Joi.object(),
-                        createdAt: Joi.date(),
-                        updatedAt: Joi.date()
+                        _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4f'),
+                        workflowTemplateId: Joi.string().example(
+                          '60d21bbfe3d5d533d9fc1e4d'
+                        ),
+                        name: Joi.string().example('Model Deployment'),
+                        description: Joi.string().example(
+                          'Deploy the validated AI model'
+                        ),
+                        type: Joi.string().example('approval'),
+                        dependencies_requires: Joi.array()
+                          .items(Joi.string())
+                          .example(['60d21bbfe3d5d533d9fc1e4c']),
+                        metadata: Joi.object().example({ priority: 'high' }),
+                        createdAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        ),
+                        updatedAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        )
                       })
                     ),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'validation'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 404: { description: 'Template not found' },
@@ -149,15 +200,47 @@ export default {
                 200: {
                   description: 'Successfully updated checklist item template',
                   schema: Joi.object({
-                    _id: Joi.string(),
-                    workflowTemplateId: Joi.string(),
-                    name: Joi.string(),
-                    description: Joi.string(),
-                    type: Joi.string(),
-                    dependencies_requires: Joi.array().items(Joi.string()),
-                    metadata: Joi.object(),
-                    createdAt: Joi.date(),
-                    updatedAt: Joi.date()
+                    _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                    workflowTemplateId: Joi.string().example(
+                      '60d21bbfe3d5d533d9fc1e4d'
+                    ),
+                    name: Joi.string().example('Model Validation'),
+                    description: Joi.string().example(
+                      'Validate the AI model performance and fairness'
+                    ),
+                    type: Joi.string().example('task'),
+                    dependencies_requires: Joi.array()
+                      .items(Joi.string())
+                      .example(['60d21bbfe3d5d533d9fc1e4e']),
+                    dependencies_requiredBy: Joi.array().items(
+                      Joi.object({
+                        _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4f'),
+                        workflowTemplateId: Joi.string().example(
+                          '60d21bbfe3d5d533d9fc1e4d'
+                        ),
+                        name: Joi.string().example('Model Deployment'),
+                        description: Joi.string().example(
+                          'Deploy the validated AI model'
+                        ),
+                        type: Joi.string().example('approval'),
+                        dependencies_requires: Joi.array()
+                          .items(Joi.string())
+                          .example(['60d21bbfe3d5d533d9fc1e4c']),
+                        metadata: Joi.object().example({ priority: 'high' }),
+                        createdAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        ),
+                        updatedAt: Joi.date().example(
+                          '2024-03-20T10:00:00.000Z'
+                        )
+                      })
+                    ),
+                    metadata: Joi.object().example({
+                      priority: 'high',
+                      category: 'validation'
+                    }),
+                    createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                    updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
                 },
                 404: { description: 'Template not found' },
@@ -203,9 +286,9 @@ export default {
           description: 'Get all checklist item templates',
           validate: {
             query: Joi.object({
-              workflowTemplateId: Joi.string().description(
-                'Filter by workflow template ID'
-              )
+              workflowTemplateId: Joi.string()
+                .description('Filter by workflow template ID')
+                .example('60d21bbfe3d5d533d9fc1e4d')
             })
           },
           plugins: {
@@ -216,30 +299,47 @@ export default {
                     'Successfully retrieved checklist item templates',
                   schema: Joi.array().items(
                     Joi.object({
-                      _id: Joi.string(),
-                      workflowTemplateId: Joi.string(),
-                      name: Joi.string(),
-                      description: Joi.string(),
-                      type: Joi.string(),
-                      dependencies_requires: Joi.array().items(Joi.string()),
+                      _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
+                      workflowTemplateId: Joi.string().example(
+                        '60d21bbfe3d5d533d9fc1e4d'
+                      ),
+                      name: Joi.string().example('Model Validation'),
+                      description: Joi.string().example(
+                        'Validate the AI model performance and fairness'
+                      ),
+                      type: Joi.string().example('task'),
+                      dependencies_requires: Joi.array()
+                        .items(Joi.string())
+                        .example(['60d21bbfe3d5d533d9fc1e4e']),
                       dependencies_requiredBy: Joi.array().items(
                         Joi.object({
-                          _id: Joi.string(),
-                          workflowTemplateId: Joi.string(),
-                          name: Joi.string(),
-                          description: Joi.string(),
-                          type: Joi.string(),
-                          dependencies_requires: Joi.array().items(
-                            Joi.string()
+                          _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4f'),
+                          workflowTemplateId: Joi.string().example(
+                            '60d21bbfe3d5d533d9fc1e4d'
                           ),
-                          metadata: Joi.object(),
-                          createdAt: Joi.date(),
-                          updatedAt: Joi.date()
+                          name: Joi.string().example('Model Deployment'),
+                          description: Joi.string().example(
+                            'Deploy the validated AI model'
+                          ),
+                          type: Joi.string().example('approval'),
+                          dependencies_requires: Joi.array()
+                            .items(Joi.string())
+                            .example(['60d21bbfe3d5d533d9fc1e4c']),
+                          metadata: Joi.object().example({ priority: 'high' }),
+                          createdAt: Joi.date().example(
+                            '2024-03-20T10:00:00.000Z'
+                          ),
+                          updatedAt: Joi.date().example(
+                            '2024-03-20T10:00:00.000Z'
+                          )
                         })
                       ),
-                      metadata: Joi.object(),
-                      createdAt: Joi.date(),
-                      updatedAt: Joi.date()
+                      metadata: Joi.object().example({
+                        priority: 'high',
+                        category: 'validation'
+                      }),
+                      createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+                      updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                     })
                   )
                 },

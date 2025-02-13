@@ -15,12 +15,15 @@ import Joi from 'joi'
 const governanceTemplateResponseSchema = Joi.object({
   _id: Joi.string()
     .pattern(/^[0-9a-fA-F]{24}$/)
-    .description('MongoDB ObjectId'),
-  version: Joi.string(),
-  name: Joi.string(),
-  description: Joi.string(),
-  createdAt: Joi.date(),
-  updatedAt: Joi.date()
+    .description('MongoDB ObjectId')
+    .example('60d21bbfe3d5d533d9fc1e4c'),
+  version: Joi.string().example('1.0.0'),
+  name: Joi.string().example('AI Model Governance'),
+  description: Joi.string().example(
+    'Governance template for AI model development and deployment'
+  ),
+  createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
+  updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
 })
 
 /**

@@ -48,9 +48,36 @@ const router = {
         security: [{ jwt: [] }],
         documentationPath: '/docs',
         swaggerUIPath: '/docs/swagger',
-        jsonPath: '/docs/swagger.json'
+        jsonPath: '/docs/swagger.json',
+        basePath: '/api/v1',
+        pathPrefixSize: 2,
+        grouping: 'tags',
+        expanded: 'list',
+        uiOptions: { defaultModelsExpandDepth: -1 },
+        tags: [
+          {
+            name: 'api',
+            description: 'API Endpoints'
+          },
+          {
+            name: 'governance-template',
+            description:
+              '🔷 Governance Templates - Top level templates that define governance processes'
+          },
+          {
+            name: 'workflow-template',
+            description:
+              '🔶 Workflow Templates - Templates that define workflow steps within a governance template'
+          },
+          {
+            name: 'checklist-item-template',
+            description:
+              '📋 Checklist Item Templates - Individual checklist items within workflow templates'
+          }
+        ]
       }
 
+      // Register swagger plugins first
       await server.register([
         Inert,
         Vision,
