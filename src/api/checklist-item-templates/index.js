@@ -288,7 +288,10 @@ export default {
             query: Joi.object({
               workflowTemplateId: Joi.string()
                 .description('Filter by workflow template ID')
-                .example('60d21bbfe3d5d533d9fc1e4d')
+                .example('60d21bbfe3d5d533d9fc1e4d'),
+              governanceTemplateId: Joi.string()
+                .description('Filter by governance template ID')
+                .example('60d21bbfe3d5d533d9fc1e4c')
             })
           },
           plugins: {

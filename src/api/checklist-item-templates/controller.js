@@ -135,7 +135,27 @@ export const deleteChecklistItemTemplateHandler = async (request, h) => {
 export const getAllChecklistItemTemplatesHandler = async (request, h) => {
   try {
     const query = {}
-    if (request.query.workflowTemplateId) {
+
+    if (request.query.governanceTemplateId) {
+      // First find all workflow templates for this governance template
+      const workflowTemplates = await request.db
+        .collection('workflowTemplates')
+        .find({
+          governanceTemplateId: new ObjectId(request.query.governanceTemplateId)
+        })
+        .toArray()
+
+      // Get all workflow template IDs
+      const workflowTemplateIds = workflowTemplates.map((wt) => wt._id)
+
+      // Add workflow template IDs to query
+      if (workflowTemplateIds.length > 0) {
+        query.workflowTemplateId = { $in: workflowTemplateIds }
+      } else {
+        // If no workflow templates found, return empty array
+        return h.response([]).code(200)
+      }
+    } else if (request.query.workflowTemplateId) {
       query.workflowTemplateId = new ObjectId(request.query.workflowTemplateId)
     }
 

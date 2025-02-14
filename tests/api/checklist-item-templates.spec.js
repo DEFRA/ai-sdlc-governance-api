@@ -314,4 +314,119 @@ test.describe('Checklist Item Template API', () => {
     )
     await request.delete(`/api/v1/workflow-templates/${anotherWorkflowId}`)
   })
+
+  test('should filter checklist item templates by governanceTemplateId', async ({
+    request
+  }) => {
+    // Create another workflow template under the same governance template
+    const anotherWorkflowResponse = await request.post(
+      '/api/v1/workflow-templates',
+      {
+        data: {
+          name: `Another Workflow Template ${uniqueId}`,
+          description: 'Another workflow template for filter tests',
+          governanceTemplateId,
+          metadata: { test: true }
+        }
+      }
+    )
+    expect(anotherWorkflowResponse.ok()).toBeTruthy()
+    const anotherWorkflowId = (await anotherWorkflowResponse.json())._id
+
+    // Create a checklist item for the new workflow
+    const anotherChecklistResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Another Checklist Template ${uniqueId}`,
+          description: 'Another checklist template for filter tests',
+          type: 'approval',
+          workflowTemplateId: anotherWorkflowId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(anotherChecklistResponse.ok()).toBeTruthy()
+    const anotherChecklistId = (await anotherChecklistResponse.json())._id
+
+    // Create a different governance template and associated workflow/checklist
+    const differentGovResponse = await request.post(
+      '/api/v1/governance-templates',
+      {
+        data: {
+          name: `Different Governance Template ${uniqueId}`,
+          version: '1.0.0',
+          description: 'Different governance template for filter tests'
+        }
+      }
+    )
+    expect(differentGovResponse.ok()).toBeTruthy()
+    const differentGovId = (await differentGovResponse.json())._id
+
+    const differentWorkflowResponse = await request.post(
+      '/api/v1/workflow-templates',
+      {
+        data: {
+          name: `Different Workflow Template ${uniqueId}`,
+          description: 'Different workflow template for filter tests',
+          governanceTemplateId: differentGovId,
+          metadata: { test: true }
+        }
+      }
+    )
+    expect(differentWorkflowResponse.ok()).toBeTruthy()
+    const differentWorkflowId = (await differentWorkflowResponse.json())._id
+
+    const differentChecklistResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Different Checklist Template ${uniqueId}`,
+          description: 'Different checklist template for filter tests',
+          type: 'approval',
+          workflowTemplateId: differentWorkflowId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(differentChecklistResponse.ok()).toBeTruthy()
+    const differentChecklistId = (await differentChecklistResponse.json())._id
+
+    // Test filtering by original governanceTemplateId
+    const filterResponse = await request.get(
+      `/api/v1/checklist-item-templates?governanceTemplateId=${governanceTemplateId}`
+    )
+    expect(filterResponse.ok()).toBeTruthy()
+    const filteredData = await filterResponse.json()
+
+    // Verify filtered results
+    expect(Array.isArray(filteredData)).toBeTruthy()
+    expect(filteredData.length).toBeGreaterThanOrEqual(2) // Should have at least 2 items (one from each workflow)
+
+    // All items should be from workflows in the original governance template
+    const workflowIds = [workflowTemplateId, anotherWorkflowId]
+    expect(
+      filteredData.every((template) =>
+        workflowIds.includes(template.workflowTemplateId)
+      )
+    ).toBeTruthy()
+
+    // Should not include items from the different governance template
+    expect(
+      filteredData.some(
+        (template) => template.workflowTemplateId === differentWorkflowId
+      )
+    ).toBeFalsy()
+
+    // Clean up
+    await request.delete(
+      `/api/v1/checklist-item-templates/${anotherChecklistId}`
+    )
+    await request.delete(
+      `/api/v1/checklist-item-templates/${differentChecklistId}`
+    )
+    await request.delete(`/api/v1/workflow-templates/${anotherWorkflowId}`)
+    await request.delete(`/api/v1/workflow-templates/${differentWorkflowId}`)
+    await request.delete(`/api/v1/governance-templates/${differentGovId}`)
+  })
 })
