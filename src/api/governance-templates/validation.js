@@ -12,13 +12,13 @@ const objectIdSchema = Joi.string().custom((value, helpers) => {
 export const createGovernanceTemplateSchema = Joi.object({
   version: Joi.string().required(),
   name: Joi.string().required(),
-  description: Joi.string()
+  description: Joi.string().allow('')
 })
 
 export const updateGovernanceTemplateSchema = Joi.object({
   version: Joi.string(),
   name: Joi.string(),
-  description: Joi.string()
+  description: Joi.string().allow('')
 })
 
 export const idSchema = Joi.object({

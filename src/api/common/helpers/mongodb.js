@@ -96,7 +96,7 @@ async function createSchemaValidations(db) {
           _id: { bsonType: 'objectId' },
           name: { bsonType: 'string' },
           version: { bsonType: 'string' },
-          description: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
         }
@@ -139,7 +139,7 @@ async function createSchemaValidations(db) {
           _id: { bsonType: 'objectId' },
           governanceTemplateId: { bsonType: 'objectId' },
           name: { bsonType: 'string' },
-          description: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
           metadata: { bsonType: 'object' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
@@ -162,7 +162,7 @@ async function createSchemaValidations(db) {
           _id: { bsonType: 'objectId' },
           workflowTemplateId: { bsonType: 'objectId' },
           name: { bsonType: 'string' },
-          description: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
           type: { bsonType: 'string' },
           dependencies_requires: {
             bsonType: 'array',

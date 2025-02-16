@@ -2,5 +2,6 @@
   "governanceTemplates": [],
   "mongo-locks": [],
   "checklistItemTemplates": [],
-  "workflowTemplates": []
+  "workflowTemplates": [],
+  "projects": []
 }

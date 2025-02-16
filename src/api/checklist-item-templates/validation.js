@@ -12,7 +12,7 @@ const objectIdSchema = Joi.string().custom((value, helpers) => {
 export const createChecklistItemTemplateSchema = Joi.object({
   workflowTemplateId: objectIdSchema.required(),
   name: Joi.string().required(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   type: Joi.string().required().valid('approval', 'document', 'task'),
   dependencies_requires: Joi.array().items(objectIdSchema).default([]),
   metadata: Joi.object().default({})
@@ -20,7 +20,7 @@ export const createChecklistItemTemplateSchema = Joi.object({
 
 export const updateChecklistItemTemplateSchema = Joi.object({
   name: Joi.string(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   type: Joi.string().valid('approval', 'document', 'task'),
   dependencies_requires: Joi.array().items(objectIdSchema),
   metadata: Joi.object()

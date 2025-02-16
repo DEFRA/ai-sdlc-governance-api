@@ -11,7 +11,7 @@ const objectIdSchema = Joi.string().custom((value, helpers) => {
 
 export const createProjectSchema = Joi.object({
   name: Joi.string().required(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   governanceTemplateId: objectIdSchema.required(),
   selectedWorkflowTemplateIds: Joi.array().items(objectIdSchema).required(),
   metadata: Joi.object().default({})
@@ -19,7 +19,7 @@ export const createProjectSchema = Joi.object({
 
 export const updateProjectSchema = Joi.object({
   name: Joi.string(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   metadata: Joi.object()
 }).min(1)
 

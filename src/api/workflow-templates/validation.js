@@ -12,13 +12,13 @@ const objectIdSchema = Joi.string().custom((value, helpers) => {
 export const createWorkflowTemplateSchema = Joi.object({
   governanceTemplateId: objectIdSchema.required(),
   name: Joi.string().required(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   metadata: Joi.object().default({})
 })
 
 export const updateWorkflowTemplateSchema = Joi.object({
   name: Joi.string(),
-  description: Joi.string(),
+  description: Joi.string().allow(''),
   metadata: Joi.object()
 }).min(1)
 

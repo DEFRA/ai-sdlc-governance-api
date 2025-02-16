@@ -37,6 +37,13 @@ class MongoHandler {
     }
   }
 
+  async deleteAll() {
+    const collections = await this.db.listCollections().toArray()
+    for (const collection of collections) {
+      await this.db.collection(collection.name).deleteMany({})
+    }
+  }
+
   async dumpDatabase(testDataDir = 'test_data') {
     const dumpsDir = path.join(testDataDir, 'mongodb_dumps')
     await fs.mkdir(dumpsDir, { recursive: true })
@@ -149,12 +156,13 @@ async function main() {
   const argv = yargs(hideBin(process.argv))
     .command('dump', 'Dump the current state of MongoDB')
     .command('restore', 'Restore database from a dump file')
+    .command('deleteAll', 'Delete all data from all collections')
     .option('file', {
       alias: 'f',
       describe: 'Specific dump file to restore from',
       type: 'string'
     })
-    .demandCommand(1, 'You must specify an action: dump or restore')
+    .demandCommand(1, 'You must specify an action: dump, restore, or deleteAll')
     .help().argv
 
   const mongo = new MongoHandler()
@@ -175,6 +183,10 @@ async function main() {
         // eslint-disable-next-line no-console
         console.log('No dump files found to restore')
       }
+    } else if (argv._[0] === 'deleteAll') {
+      await mongo.deleteAll()
+      // eslint-disable-next-line no-console
+      console.log('All collections have been emptied')
     }
   } catch (error) {
     // eslint-disable-next-line no-console
