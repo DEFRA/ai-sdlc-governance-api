@@ -4,6 +4,7 @@ import governanceTemplateRoutes from '~/src/api/governance-templates/index.js'
 import workflowTemplateRoutes from '~/src/api/workflow-templates/index.js'
 import checklistItemTemplateRoutes from '~/src/api/checklist-item-templates/index.js'
 import projectRoutes from '~/src/api/projects/index.js'
+import checklistItemInstanceRoutes from './checklist-item-instances/index.js'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 import HapiSwagger from 'hapi-swagger'
@@ -102,7 +103,8 @@ const router = {
         governanceTemplateRoutes,
         workflowTemplateRoutes,
         checklistItemTemplateRoutes,
-        projectRoutes
+        projectRoutes,
+        checklistItemInstanceRoutes
       ])
     }
   }
