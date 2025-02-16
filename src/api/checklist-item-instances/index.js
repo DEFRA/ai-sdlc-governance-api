@@ -4,7 +4,8 @@ import {
 } from './controller.js'
 import Joi from 'joi'
 
-const checklistItemInstanceResponseSchema = Joi.object({
+// First define a base schema without the recursive dependencies
+const baseChecklistItemSchema = Joi.object({
   _id: Joi.string()
     .pattern(/^[0-9a-fA-F]{24}$/)
     .description('MongoDB ObjectId')
@@ -16,16 +17,13 @@ const checklistItemInstanceResponseSchema = Joi.object({
     .pattern(/^[0-9a-fA-F]{24}$/)
     .example('60d21bbfe3d5d533d9fc1e4e'),
   name: Joi.string().example('Model Validation'),
-  description: Joi.string().example(
-    'Validate the AI model performance and fairness'
-  ),
+  description: Joi.string()
+    .allow('')
+    .example('Validate the AI model performance and fairness'),
   type: Joi.string().example('task'),
   status: Joi.string()
     .valid('incomplete', 'complete', 'not_required')
     .example('complete'),
-  dependencies_requires: Joi.array()
-    .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
-    .example(['60d21bbfe3d5d533d9fc1e4f']),
   metadata: Joi.object()
     .example({
       priority: 'high',
@@ -39,6 +37,18 @@ const checklistItemInstanceResponseSchema = Joi.object({
     .description('Additional configuration based on checklist item type'),
   createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
   updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
+}).id('ChecklistItemInstance')
+
+// Then create the full schema that includes the recursive dependencies
+const checklistItemInstanceResponseSchema = baseChecklistItemSchema.keys({
+  dependencies_requires: Joi.array()
+    .items(
+      Joi.alternatives().try(
+        Joi.string().pattern(/^[0-9a-fA-F]{24}$/),
+        Joi.link('#ChecklistItemInstance')
+      )
+    )
+    .example(['60d21bbfe3d5d533d9fc1e4f'])
 })
 
 const updateChecklistItemInstanceSchema = Joi.object({

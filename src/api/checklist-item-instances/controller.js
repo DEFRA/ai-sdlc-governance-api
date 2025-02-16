@@ -225,18 +225,55 @@ export const getChecklistItemInstancesHandler = async (request, h) => {
       .sort({ createdAt: -1 })
       .toArray()
 
-    // Populate dependencies_requires with actual instances
+    // Populate dependencies_requires with actual instances and convert ObjectIds to strings
     for (const instance of checklistItemInstances) {
+      // Convert main instance ObjectIds to strings
+      instance._id = instance._id.toString()
+      instance.workflowInstanceId = instance.workflowInstanceId.toString()
+      instance.checklistItemTemplateId =
+        instance.checklistItemTemplateId.toString()
+
       if (
         instance.dependencies_requires &&
         instance.dependencies_requires.length > 0
       ) {
-        const dependencies = await request.db
-          .collection('checklistItemInstances')
-          .find({ _id: { $in: instance.dependencies_requires } })
-          .toArray()
+        // If dependencies_requires is an array of ObjectIds, fetch the actual instances
+        if (
+          instance.dependencies_requires[0] instanceof ObjectId ||
+          typeof instance.dependencies_requires[0] === 'string'
+        ) {
+          const dependencyIds = instance.dependencies_requires.map((id) =>
+            typeof id === 'string' ? new ObjectId(id) : id
+          )
+          const dependencies = await request.db
+            .collection('checklistItemInstances')
+            .find({ _id: { $in: dependencyIds } })
+            .toArray()
 
-        instance.dependencies_requires = dependencies
+          // Convert dependency ObjectIds to strings
+          instance.dependencies_requires = dependencies.map((dep) => ({
+            ...dep,
+            _id: dep._id.toString(),
+            workflowInstanceId: dep.workflowInstanceId.toString(),
+            checklistItemTemplateId: dep.checklistItemTemplateId.toString(),
+            dependencies_requires: Array.isArray(dep.dependencies_requires)
+              ? dep.dependencies_requires.map((id) => id.toString())
+              : dep.dependencies_requires
+          }))
+        } else {
+          // If dependencies_requires is already populated with instances, just convert their ObjectIds
+          instance.dependencies_requires = instance.dependencies_requires.map(
+            (dep) => ({
+              ...dep,
+              _id: dep._id.toString(),
+              workflowInstanceId: dep.workflowInstanceId.toString(),
+              checklistItemTemplateId: dep.checklistItemTemplateId.toString(),
+              dependencies_requires: Array.isArray(dep.dependencies_requires)
+                ? dep.dependencies_requires.map((id) => id.toString())
+                : dep.dependencies_requires
+            })
+          )
+        }
       }
     }
 

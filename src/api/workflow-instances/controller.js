@@ -21,7 +21,15 @@ export const getWorkflowInstancesHandler = async (request, h) => {
       .sort({ createdAt: -1 })
       .toArray()
 
-    return h.response(workflowInstances).code(200)
+    // Convert ObjectIds to strings
+    const formattedInstances = workflowInstances.map((instance) => ({
+      ...instance,
+      _id: instance._id.toString(),
+      projectId: instance.projectId.toString(),
+      workflowTemplateId: instance.workflowTemplateId.toString()
+    }))
+
+    return h.response(formattedInstances).code(200)
   } catch (error) {
     if (error.isBoom) throw error
     throw Boom.badRequest(error.message)
