@@ -307,17 +307,60 @@ async function main() {
 }
 
 async function resetSchemaValidations() {
-  const client = await MongoClient.connect('mongodb://127.0.0.1:27017/')
-  const db = client.db('ai-sdlc-governance-api')
+  const uri = config.get('mongoUri')
+  const dbName = config.get('mongoDatabase')
+  const client = await MongoClient.connect(uri)
+  const db = client.db(dbName)
+
+  // Drop existing schema validations for all collections
+  const collections = [
+    'projects',
+    'governanceTemplates',
+    'workflowTemplates',
+    'checklistItemTemplates',
+    'workflowInstances',
+    'checklistItemInstances',
+    'auditLogs'
+  ]
+
+  // Create collections if they don't exist
+  for (const collection of collections) {
+    try {
+      await db.createCollection(collection)
+    } catch (error) {
+      // Collection might already exist, which is fine
+      if (!error.message.includes('already exists')) {
+        throw error
+      }
+    }
+  }
 
   // Drop existing schema validations
-  await db.command({ collMod: 'projects', validator: {} })
+  for (const collection of collections) {
+    await db.command({ collMod: collection, validator: {} })
+  }
 
   // Re-create schema validations
-  await db.command({
-    collMod: 'projects',
-    validator: {
-      $jsonSchema: {
+  const validations = [
+    {
+      collection: 'governanceTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['name', 'version', 'createdAt', 'updatedAt'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          version: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'projects',
+      schema: {
         bsonType: 'object',
         required: [
           'name',
@@ -330,7 +373,7 @@ async function resetSchemaValidations() {
         properties: {
           _id: { bsonType: 'objectId' },
           name: { bsonType: 'string' },
-          description: { bsonType: ['string', 'null'] },
+          description: { bsonType: 'string' },
           governanceTemplateId: { bsonType: 'objectId' },
           selectedWorkflowTemplateIds: {
             bsonType: 'array',
@@ -342,9 +385,122 @@ async function resetSchemaValidations() {
         }
       }
     },
-    validationLevel: 'strict',
-    validationAction: 'error'
-  })
+    {
+      collection: 'workflowTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['governanceTemplateId', 'name', 'createdAt', 'updatedAt'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          governanceTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'workflowInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'projectId',
+          'workflowTemplateId',
+          'name',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          projectId: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          metadata: { bsonType: 'object' },
+          status: { bsonType: 'string', enum: ['active', 'completed'] },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemTemplates',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'workflowTemplateId',
+          'name',
+          'type',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          type: { bsonType: 'string' },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'workflowInstanceId',
+          'checklistItemTemplateId',
+          'name',
+          'type',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowInstanceId: { bsonType: 'objectId' },
+          checklistItemTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          type: { bsonType: 'string' },
+          status: {
+            bsonType: 'string',
+            enum: ['incomplete', 'complete', 'not_required']
+          },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    }
+  ]
+
+  for (const { collection, schema } of validations) {
+    await db.command({
+      collMod: collection,
+      validator: { $jsonSchema: schema },
+      validationLevel: 'strict',
+      validationAction: 'error'
+    })
+  }
 
   // eslint-disable-next-line no-console
   console.log('Schema validations reset successfully')
