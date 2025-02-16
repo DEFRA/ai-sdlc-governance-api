@@ -1,4 +1,7 @@
-import { updateChecklistItemInstanceHandler } from './controller.js'
+import {
+  updateChecklistItemInstanceHandler,
+  getChecklistItemInstancesHandler
+} from './controller.js'
 import Joi from 'joi'
 
 const checklistItemInstanceResponseSchema = Joi.object({
@@ -39,9 +42,15 @@ const checklistItemInstanceResponseSchema = Joi.object({
 })
 
 const updateChecklistItemInstanceSchema = Joi.object({
+  name: Joi.string(),
+  description: Joi.string().allow(''),
+  type: Joi.string().valid('approval', 'document', 'task'),
   status: Joi.string()
     .valid('incomplete', 'complete', 'not_required')
     .description('New status for the checklist item'),
+  dependencies_requires: Joi.array().items(
+    Joi.string().pattern(/^[0-9a-fA-F]{24}$/)
+  ),
   metadata: Joi.object({
     // Approval type metadata
     approver: Joi.string().email().description('Email of the approver'),
@@ -66,6 +75,39 @@ export default {
   register: (server) => {
     server.route([
       {
+        method: 'GET',
+        path: '/api/v1/checklist-item-instances',
+        handler: getChecklistItemInstancesHandler,
+        options: {
+          tags: ['api', 'checklist-item-instance'],
+          description: 'Get checklist item instances for a workflow instance',
+          validate: {
+            query: Joi.object({
+              workflowInstanceId: Joi.string()
+                .pattern(/^[0-9a-fA-F]{24}$/)
+                .required()
+                .description('MongoDB ObjectId of the workflow instance')
+            })
+          },
+          response: {
+            schema: Joi.array().items(checklistItemInstanceResponseSchema)
+          },
+          plugins: {
+            'hapi-swagger': {
+              responses: {
+                200: {
+                  description:
+                    'List of checklist item instances for the workflow',
+                  schema: Joi.array().items(checklistItemInstanceResponseSchema)
+                },
+                400: { description: 'Bad request or validation error' },
+                404: { description: 'Workflow instance not found' }
+              }
+            }
+          }
+        }
+      },
+      {
         method: 'PUT',
         path: '/api/v1/checklist-item-instances/{id}',
         handler: updateChecklistItemInstanceHandler,
@@ -77,9 +119,12 @@ export default {
               id: Joi.string()
                 .pattern(/^[0-9a-fA-F]{24}$/)
                 .required()
-                .description('Checklist item instance ID')
+                .description('MongoDB ObjectId')
             }),
             payload: updateChecklistItemInstanceSchema
+          },
+          response: {
+            schema: checklistItemInstanceResponseSchema
           },
           plugins: {
             'hapi-swagger': {

@@ -204,3 +204,45 @@ export const updateChecklistItemInstanceHandler = async (request, h) => {
     throw Boom.badRequest(error.message)
   }
 }
+
+export const getChecklistItemInstancesHandler = async (request, h) => {
+  try {
+    const workflowInstanceId = new ObjectId(request.query.workflowInstanceId)
+
+    // Verify workflow instance exists
+    const workflowInstance = await request.db
+      .collection('workflowInstances')
+      .findOne({ _id: workflowInstanceId })
+
+    if (!workflowInstance) {
+      throw Boom.notFound('Workflow instance not found')
+    }
+
+    // Get checklist item instances for the workflow instance
+    const checklistItemInstances = await request.db
+      .collection('checklistItemInstances')
+      .find({ workflowInstanceId })
+      .sort({ createdAt: -1 })
+      .toArray()
+
+    // Populate dependencies_requires with actual instances
+    for (const instance of checklistItemInstances) {
+      if (
+        instance.dependencies_requires &&
+        instance.dependencies_requires.length > 0
+      ) {
+        const dependencies = await request.db
+          .collection('checklistItemInstances')
+          .find({ _id: { $in: instance.dependencies_requires } })
+          .toArray()
+
+        instance.dependencies_requires = dependencies
+      }
+    }
+
+    return h.response(checklistItemInstances).code(200)
+  } catch (error) {
+    if (error.isBoom) throw error
+    throw Boom.badRequest(error.message)
+  }
+}

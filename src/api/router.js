@@ -5,6 +5,7 @@ import workflowTemplateRoutes from '~/src/api/workflow-templates/index.js'
 import checklistItemTemplateRoutes from '~/src/api/checklist-item-templates/index.js'
 import projectRoutes from '~/src/api/projects/index.js'
 import checklistItemInstanceRoutes from './checklist-item-instances/index.js'
+import workflowInstanceRoutes from './workflow-instances/index.js'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 import HapiSwagger from 'hapi-swagger'
@@ -80,6 +81,16 @@ const router = {
             name: 'checklist-item-template',
             description:
               '📋 Checklist Item Templates - Individual checklist items within workflow templates'
+          },
+          {
+            name: 'workflow-instance',
+            description:
+              '🔸 Workflow Instances - Active workflow instances within projects'
+          },
+          {
+            name: 'checklist-item-instance',
+            description:
+              '✓ Checklist Item Instances - Active checklist items within workflow instances'
           }
         ]
       }
@@ -104,7 +115,8 @@ const router = {
         workflowTemplateRoutes,
         checklistItemTemplateRoutes,
         projectRoutes,
-        checklistItemInstanceRoutes
+        checklistItemInstanceRoutes,
+        workflowInstanceRoutes
       ])
     }
   }
