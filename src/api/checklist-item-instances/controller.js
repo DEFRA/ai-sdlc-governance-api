@@ -59,6 +59,97 @@ async function recordAuditLog(request, instanceId, oldStatus, newStatus) {
   }
 }
 
+/**
+ * Performs a topological sort of checklist items based on their dependencies
+ * @param {Array} items Array of checklist items to sort
+ * @returns {Array} Sorted array of checklist items
+ */
+function topologicalSort(items) {
+  // Handle empty case
+  if (!items || items.length === 0) {
+    return []
+  }
+
+  // Create a map of id to item for easy lookup
+  const itemMap = new Map(items.map((item) => [item._id.toString(), item]))
+
+  // Create adjacency list representation of dependencies
+  const graph = new Map()
+  const inDegree = new Map()
+
+  // Initialize graphs
+  items.forEach((item) => {
+    const id = item._id.toString()
+    graph.set(id, [])
+    inDegree.set(id, 0)
+  })
+
+  // Build dependency graph
+  items.forEach((item) => {
+    const id = item._id.toString()
+    if (item.dependencies_requires) {
+      const deps = Array.isArray(item.dependencies_requires)
+        ? item.dependencies_requires.map((d) =>
+            typeof d === 'string' ? d : d._id.toString()
+          )
+        : []
+      deps.forEach((depId) => {
+        if (graph.has(depId)) {
+          graph.get(depId).push(id)
+          inDegree.set(id, inDegree.get(id) + 1)
+        }
+      })
+    }
+  })
+
+  // Find all items with no dependencies
+  const queue = []
+  inDegree.forEach((count, id) => {
+    if (count === 0) queue.push(id)
+  })
+
+  // Process queue
+  const result = []
+  while (queue.length > 0) {
+    const id = queue.shift()
+    result.push(itemMap.get(id))
+
+    // Process items that depend on this one
+    graph.get(id).forEach((dependentId) => {
+      inDegree.set(dependentId, inDegree.get(dependentId) - 1)
+      if (inDegree.get(dependentId) === 0) {
+        queue.push(dependentId)
+      }
+    })
+  }
+
+  return result
+}
+
+/**
+ * Compares two workflows based on their checklist items
+ * @param {Array} itemsA Checklist items for workflow A
+ * @param {Array} itemsB Checklist items for workflow B
+ * @returns {number} Comparison result (-1, 0, 1)
+ */
+function compareWorkflowsByItems(itemsA, itemsB) {
+  // Handle empty cases - empty workflows go to the bottom
+  if (!itemsA?.length && !itemsB?.length) return 0
+  if (!itemsA?.length) return 1
+  if (!itemsB?.length) return -1
+
+  // Compare based on number of completed items
+  const completedA = itemsA.filter((item) => item.status === 'complete').length
+  const completedB = itemsB.filter((item) => item.status === 'complete').length
+
+  if (completedA !== completedB) {
+    return completedB - completedA // More completed items first
+  }
+
+  // If same number of completed items, compare total items
+  return itemsB.length - itemsA.length // More total items first
+}
+
 export const updateChecklistItemInstanceStatusHandler = async (request, h) => {
   try {
     const instanceId = new ObjectId(request.params.id)
@@ -219,35 +310,58 @@ export const getChecklistItemInstancesHandler = async (request, h) => {
   try {
     const workflowInstanceId = new ObjectId(request.query.workflowInstanceId)
 
-    // Verify workflow instance exists
-    const workflowInstance = await request.db
+    // Get all workflow instances to compare
+    const workflowInstances = await request.db
       .collection('workflowInstances')
-      .findOne({ _id: workflowInstanceId })
-
-    if (!workflowInstance) {
-      throw Boom.notFound('Workflow instance not found')
-    }
-
-    // Get checklist item instances for the workflow instance
-    const checklistItemInstances = await request.db
-      .collection('checklistItemInstances')
-      .find({ workflowInstanceId })
-      .sort({ createdAt: -1 })
+      .find({})
       .toArray()
 
-    // Populate dependencies_requires with actual instances and convert ObjectIds to strings
+    if (!workflowInstances?.length) {
+      throw Boom.notFound('No workflow instances found')
+    }
+
+    // Get checklist items for all workflows
+    const allChecklistItems = await request.db
+      .collection('checklistItemInstances')
+      .find({})
+      .toArray()
+
+    // Group checklist items by workflow
+    const itemsByWorkflow = new Map()
+    allChecklistItems.forEach((item) => {
+      const wfId = item.workflowInstanceId.toString()
+      if (!itemsByWorkflow.has(wfId)) {
+        itemsByWorkflow.set(wfId, [])
+      }
+      itemsByWorkflow.get(wfId).push(item)
+    })
+
+    // Sort workflows based on their checklist items
+    workflowInstances.sort((a, b) => {
+      const itemsA = itemsByWorkflow.get(a._id.toString()) || []
+      const itemsB = itemsByWorkflow.get(b._id.toString()) || []
+      return compareWorkflowsByItems(itemsA, itemsB)
+    })
+
+    // Get checklist items for the requested workflow
+    const checklistItemInstances = allChecklistItems.filter(
+      (item) =>
+        item.workflowInstanceId.toString() === workflowInstanceId.toString()
+    )
+
+    // If no checklist items found, return empty array
+    if (!checklistItemInstances?.length) {
+      return h.response([]).code(200)
+    }
+
+    // Convert ObjectIds and populate dependencies
     for (const instance of checklistItemInstances) {
-      // Convert main instance ObjectIds to strings
       instance._id = instance._id.toString()
       instance.workflowInstanceId = instance.workflowInstanceId.toString()
       instance.checklistItemTemplateId =
         instance.checklistItemTemplateId.toString()
 
-      if (
-        instance.dependencies_requires &&
-        instance.dependencies_requires.length > 0
-      ) {
-        // If dependencies_requires is an array of ObjectIds, fetch the actual instances
+      if (instance.dependencies_requires?.length > 0) {
         if (
           instance.dependencies_requires[0] instanceof ObjectId ||
           typeof instance.dependencies_requires[0] === 'string'
@@ -260,7 +374,6 @@ export const getChecklistItemInstancesHandler = async (request, h) => {
             .find({ _id: { $in: dependencyIds } })
             .toArray()
 
-          // Convert dependency ObjectIds to strings
           instance.dependencies_requires = dependencies.map((dep) => ({
             ...dep,
             _id: dep._id.toString(),
@@ -270,24 +383,14 @@ export const getChecklistItemInstancesHandler = async (request, h) => {
               ? dep.dependencies_requires.map((id) => id.toString())
               : dep.dependencies_requires
           }))
-        } else {
-          // If dependencies_requires is already populated with instances, just convert their ObjectIds
-          instance.dependencies_requires = instance.dependencies_requires.map(
-            (dep) => ({
-              ...dep,
-              _id: dep._id.toString(),
-              workflowInstanceId: dep.workflowInstanceId.toString(),
-              checklistItemTemplateId: dep.checklistItemTemplateId.toString(),
-              dependencies_requires: Array.isArray(dep.dependencies_requires)
-                ? dep.dependencies_requires.map((id) => id.toString())
-                : dep.dependencies_requires
-            })
-          )
         }
       }
     }
 
-    return h.response(checklistItemInstances).code(200)
+    // Sort items topologically based on dependencies
+    const sortedItems = topologicalSort(checklistItemInstances)
+
+    return h.response(sortedItems).code(200)
   } catch (error) {
     if (error.isBoom) throw error
     throw Boom.badRequest(error.message)
