@@ -103,6 +103,33 @@ async function createSchemaValidations(db) {
       }
     },
     {
+      collection: 'projects',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'name',
+          'governanceTemplateId',
+          'selectedWorkflowTemplateIds',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string' },
+          governanceTemplateId: { bsonType: 'objectId' },
+          selectedWorkflowTemplateIds: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
       collection: 'workflowTemplates',
       schema: {
         bsonType: 'object',

@@ -3,6 +3,7 @@ import { example } from '~/src/api/example/index.js'
 import governanceTemplateRoutes from '~/src/api/governance-templates/index.js'
 import workflowTemplateRoutes from '~/src/api/workflow-templates/index.js'
 import checklistItemTemplateRoutes from '~/src/api/checklist-item-templates/index.js'
+import projectRoutes from '~/src/api/projects/index.js'
 import Inert from '@hapi/inert'
 import Vision from '@hapi/vision'
 import HapiSwagger from 'hapi-swagger'
@@ -60,6 +61,11 @@ const router = {
             description: 'API Endpoints'
           },
           {
+            name: 'project',
+            description:
+              '📊 Projects - Project instances created from governance templates'
+          },
+          {
             name: 'governance-template',
             description:
               '🔷 Governance Templates - Top level templates that define governance processes'
@@ -95,7 +101,8 @@ const router = {
         example,
         governanceTemplateRoutes,
         workflowTemplateRoutes,
-        checklistItemTemplateRoutes
+        checklistItemTemplateRoutes,
+        projectRoutes
       ])
     }
   }
