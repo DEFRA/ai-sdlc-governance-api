@@ -92,13 +92,23 @@ async function createChecklistItemInstances(
 
 export const createProjectHandler = async (request, h) => {
   try {
+    // Debug logging for incoming request
+    request.log(['debug', 'projects'], {
+      msg: 'Creating project with payload',
+      payload: request.payload
+    })
+
     // Verify governanceTemplateId exists
     const governanceTemplate = await request.db
       .collection('governanceTemplates')
       .findOne({ _id: new ObjectId(request.payload.governanceTemplateId) })
 
     if (!governanceTemplate) {
-      throw Boom.notFound('Governance template not found')
+      request.log(['error', 'projects'], {
+        msg: 'Governance template not found',
+        governanceTemplateId: request.payload.governanceTemplateId
+      })
+      throw Boom.badRequest('Governance template not found')
     }
 
     // Verify all workflow template IDs exist and belong to the governance template
@@ -118,6 +128,12 @@ export const createProjectHandler = async (request, h) => {
       workflowTemplates.length !==
       request.payload.selectedWorkflowTemplateIds.length
     ) {
+      request.log(['error', 'projects'], {
+        msg: 'Invalid workflow templates',
+        selectedWorkflowTemplateIds:
+          request.payload.selectedWorkflowTemplateIds,
+        foundWorkflowTemplates: workflowTemplates.map((wt) => wt._id)
+      })
       throw Boom.badRequest(
         'One or more workflow templates are invalid or do not belong to the specified governance template'
       )
@@ -125,49 +141,72 @@ export const createProjectHandler = async (request, h) => {
 
     // Create the project
     const project = createProject(request.payload)
-    const result = await request.db.collection('projects').insertOne(project)
-    const projectId = result.insertedId
+    request.log(['debug', 'projects'], {
+      msg: 'Attempting to insert project',
+      project: JSON.stringify(project, (key, value) =>
+        value instanceof ObjectId ? value.toString() : value
+      )
+    })
+    try {
+      const result = await request.db.collection('projects').insertOne(project)
+      const projectId = result.insertedId
 
-    // Create workflow instances for each selected workflow template
-    const workflowInstances = []
-    const selectedWorkflowIds = new Set(
-      request.payload.selectedWorkflowTemplateIds.map((id) => id.toString())
-    )
+      // Create workflow instances for each selected workflow template
+      const workflowInstances = []
+      const selectedWorkflowIds = new Set(
+        request.payload.selectedWorkflowTemplateIds.map((id) => id.toString())
+      )
 
-    for (const template of workflowTemplates) {
-      const workflowInstance = {
-        projectId,
-        workflowTemplateId: template._id,
-        name: template.name,
-        description: template.description,
-        metadata: template.metadata,
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
+      for (const template of workflowTemplates) {
+        const workflowInstance = {
+          projectId,
+          workflowTemplateId: template._id,
+          name: template.name,
+          description: template.description,
+          metadata: template.metadata,
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+
+        const workflowResult = await request.db
+          .collection('workflowInstances')
+          .insertOne(workflowInstance)
+
+        workflowInstances.push({
+          ...workflowInstance,
+          _id: workflowResult.insertedId
+        })
+
+        // Create checklist item instances for this workflow
+        await createChecklistItemInstances(
+          request.db,
+          workflowResult.insertedId,
+          template._id,
+          selectedWorkflowIds
+        )
       }
 
-      const workflowResult = await request.db
-        .collection('workflowInstances')
-        .insertOne(workflowInstance)
-
-      workflowInstances.push({
-        ...workflowInstance,
-        _id: workflowResult.insertedId
+      return h
+        .response({ ...project, _id: projectId, workflowInstances })
+        .code(201)
+    } catch (error) {
+      request.log(['error', 'projects'], {
+        msg: 'MongoDB validation error details',
+        error: error.message,
+        code: error.code,
+        codeName: error.codeName,
+        errInfo: error.errInfo
       })
-
-      // Create checklist item instances for this workflow
-      await createChecklistItemInstances(
-        request.db,
-        workflowResult.insertedId,
-        template._id,
-        selectedWorkflowIds
-      )
+      throw error
     }
-
-    return h
-      .response({ ...project, _id: projectId, workflowInstances })
-      .code(201)
   } catch (error) {
+    request.log(['error', 'projects'], {
+      msg: 'Failed to create project',
+      error: error.message,
+      stack: error.stack,
+      payload: request.payload
+    })
     if (error.isBoom) throw error
     throw Boom.badRequest(error.message)
   }

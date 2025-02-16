@@ -24,9 +24,9 @@ import { ObjectId } from 'mongodb'
  */
 export function createProject(data) {
   const now = new Date()
-  return {
+  const project = {
     name: data.name,
-    description: data.description,
+    description: data.description ?? '',
     governanceTemplateId:
       typeof data.governanceTemplateId === 'string'
         ? new ObjectId(data.governanceTemplateId)
@@ -38,4 +38,26 @@ export function createProject(data) {
     createdAt: now,
     updatedAt: now
   }
+
+  // Ensure all required fields are present and of correct type
+  if (!project.name || typeof project.name !== 'string') {
+    throw new Error('Invalid name')
+  }
+  if (!(project.governanceTemplateId instanceof ObjectId)) {
+    throw new Error('Invalid governanceTemplateId')
+  }
+  if (
+    !Array.isArray(project.selectedWorkflowTemplateIds) ||
+    !project.selectedWorkflowTemplateIds.every((id) => id instanceof ObjectId)
+  ) {
+    throw new Error('Invalid selectedWorkflowTemplateIds')
+  }
+  if (
+    !(project.createdAt instanceof Date) ||
+    !(project.updatedAt instanceof Date)
+  ) {
+    throw new Error('Invalid dates')
+  }
+
+  return project
 }

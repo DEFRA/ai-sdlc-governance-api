@@ -13,7 +13,9 @@ const workflowInstanceResponseSchema = Joi.object({
     .pattern(/^[0-9a-fA-F]{24}$/)
     .example('60d21bbfe3d5d533d9fc1e4e'),
   name: Joi.string().example('Model Validation Workflow'),
-  description: Joi.string().example('Workflow for validating AI models'),
+  description: Joi.string()
+    .allow('')
+    .example('Workflow for validating AI models'),
   metadata: Joi.object().example({
     priority: 'high',
     category: 'validation'

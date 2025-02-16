@@ -5,6 +5,7 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { fileURLToPath } from 'url'
 import { config } from '../src/config/index.js'
+import { logger } from '../src/api/common/helpers/logging/logger.js'
 
 // Use __filename for potential future path resolution needs
 fileURLToPath(import.meta.url)
@@ -255,12 +256,16 @@ async function main() {
     .command('dump', 'Dump the current state of MongoDB')
     .command('restore', 'Restore database from a dump file')
     .command('deleteAll', 'Delete all data from all collections')
+    .command('reset-schema', 'Reset schema validations')
     .option('file', {
       alias: 'f',
       describe: 'Specific dump file to restore from',
       type: 'string'
     })
-    .demandCommand(1, 'You must specify an action: dump, restore, or deleteAll')
+    .demandCommand(
+      1,
+      'You must specify an action: dump, restore, deleteAll, or reset-schema'
+    )
     .help().argv
 
   const mongo = new MongoHandler()
@@ -285,12 +290,15 @@ async function main() {
       await mongo.deleteAll()
       // eslint-disable-next-line no-console
       console.log('All collections have been emptied')
+    } else if (argv._[0] === 'reset-schema') {
+      await resetSchemaValidations()
+      // eslint-disable-next-line no-console
+      console.log('Schema validations have been reset')
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(
-      'Fatal error:',
-      error instanceof Error ? error.message : 'Unknown error'
+    logger.error(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      'Fatal error occurred'
     )
     throw error
   } finally {
@@ -298,11 +306,54 @@ async function main() {
   }
 }
 
+async function resetSchemaValidations() {
+  const client = await MongoClient.connect('mongodb://127.0.0.1:27017/')
+  const db = client.db('ai-sdlc-governance-api')
+
+  // Drop existing schema validations
+  await db.command({ collMod: 'projects', validator: {} })
+
+  // Re-create schema validations
+  await db.command({
+    collMod: 'projects',
+    validator: {
+      $jsonSchema: {
+        bsonType: 'object',
+        required: [
+          'name',
+          'governanceTemplateId',
+          'selectedWorkflowTemplateIds',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: ['string', 'null'] },
+          governanceTemplateId: { bsonType: 'objectId' },
+          selectedWorkflowTemplateIds: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    validationLevel: 'strict',
+    validationAction: 'error'
+  })
+
+  logger.info('Schema validations reset successfully')
+  await client.close()
+}
+
 main().catch((error) => {
-  // eslint-disable-next-line no-console
-  console.error(
-    'Fatal error:',
-    error instanceof Error ? error.message : 'Unknown error'
+  logger.error(
+    { error: error instanceof Error ? error.message : 'Unknown error' },
+    'Fatal error occurred'
   )
   process.exitCode = 1
 })

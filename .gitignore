@@ -21,3 +21,7 @@ playwright/.cache/
 **/test-results/
 **/playwright-report/
 **/playwright/.cache/
+
+# Application logs
+logs/
+*.log
