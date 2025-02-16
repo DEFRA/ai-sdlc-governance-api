@@ -110,7 +110,7 @@ class MongoHandler {
 
       if (documents.length === 0) continue
 
-      // Convert string IDs back to ObjectIds
+      // Convert string IDs back to ObjectIds and handle special fields
       const processedDocs = documents.map((doc) => {
         const processedDoc = { ...doc }
 
@@ -119,8 +119,9 @@ class MongoHandler {
           processedDoc._id = new ObjectId(processedDoc._id)
         }
 
-        // Process other *_id and *_ids fields
+        // Process other fields
         Object.keys(processedDoc).forEach((key) => {
+          // Handle ObjectId fields
           if (key.endsWith('_id') && typeof processedDoc[key] === 'string') {
             try {
               processedDoc[key] = new ObjectId(processedDoc[key])
@@ -140,11 +141,108 @@ class MongoHandler {
           }
         })
 
+        // Convert date strings to Date objects
+        if (processedDoc.createdAt) {
+          processedDoc.createdAt = new Date(processedDoc.createdAt)
+        }
+        if (processedDoc.updatedAt) {
+          processedDoc.updatedAt = new Date(processedDoc.updatedAt)
+        }
+
+        // Handle dependencies_requires array
+        if (processedDoc.dependencies_requires) {
+          if (
+            Array.isArray(processedDoc.dependencies_requires) &&
+            processedDoc.dependencies_requires.length > 0
+          ) {
+            processedDoc.dependencies_requires =
+              processedDoc.dependencies_requires.map((id) => new ObjectId(id))
+          } else {
+            delete processedDoc.dependencies_requires
+          }
+        }
+
+        // Handle optional fields
+        if (
+          processedDoc.metadata &&
+          Object.keys(processedDoc.metadata).length === 0
+        ) {
+          delete processedDoc.metadata
+        }
+
+        if (processedDoc.description === '') {
+          delete processedDoc.description
+        }
+
+        // Handle status fields with correct enums
+        if (collectionName === 'workflowInstances' && !processedDoc.status) {
+          processedDoc.status = 'active'
+        }
+        if (
+          collectionName === 'checklistItemInstances' &&
+          !processedDoc.status
+        ) {
+          processedDoc.status = 'incomplete'
+        }
+
+        // Ensure specific fields are ObjectIds
+        if (
+          processedDoc.workflowTemplateId &&
+          typeof processedDoc.workflowTemplateId === 'string'
+        ) {
+          processedDoc.workflowTemplateId = new ObjectId(
+            processedDoc.workflowTemplateId
+          )
+        }
+        if (
+          processedDoc.governanceTemplateId &&
+          typeof processedDoc.governanceTemplateId === 'string'
+        ) {
+          processedDoc.governanceTemplateId = new ObjectId(
+            processedDoc.governanceTemplateId
+          )
+        }
+
+        // Log the processed document for debugging
+        // eslint-disable-next-line no-console
+        console.log(`Processed document for ${collectionName}:`, {
+          ...processedDoc,
+          createdAt:
+            processedDoc.createdAt instanceof Date
+              ? processedDoc.createdAt.toISOString()
+              : processedDoc.createdAt,
+          updatedAt:
+            processedDoc.updatedAt instanceof Date
+              ? processedDoc.updatedAt.toISOString()
+              : processedDoc.updatedAt
+        })
+
         return processedDoc
       })
 
       if (processedDocs.length > 0) {
-        await this.db.collection(collectionName).insertMany(processedDocs)
+        try {
+          await this.db.collection(collectionName).insertMany(processedDocs)
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error(
+            `Error inserting into ${collectionName}:`,
+            error.message
+          )
+          // eslint-disable-next-line no-console
+          console.error('First document:', {
+            ...processedDocs[0],
+            createdAt:
+              processedDocs[0].createdAt instanceof Date
+                ? processedDocs[0].createdAt.toISOString()
+                : processedDocs[0].createdAt,
+            updatedAt:
+              processedDocs[0].updatedAt instanceof Date
+                ? processedDocs[0].updatedAt.toISOString()
+                : processedDocs[0].updatedAt
+          })
+          throw error
+        }
       }
     }
 
