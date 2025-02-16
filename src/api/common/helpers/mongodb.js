@@ -147,6 +147,32 @@ async function createSchemaValidations(db) {
       }
     },
     {
+      collection: 'workflowInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'projectId',
+          'workflowTemplateId',
+          'name',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          projectId: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          metadata: { bsonType: 'object' },
+          status: { bsonType: 'string', enum: ['active', 'completed'] },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
       collection: 'checklistItemTemplates',
       schema: {
         bsonType: 'object',
@@ -164,6 +190,41 @@ async function createSchemaValidations(db) {
           name: { bsonType: 'string' },
           description: { bsonType: 'string', pattern: '^.*$' },
           type: { bsonType: 'string' },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'workflowInstanceId',
+          'checklistItemTemplateId',
+          'name',
+          'type',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowInstanceId: { bsonType: 'objectId' },
+          checklistItemTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          type: { bsonType: 'string' },
+          status: {
+            bsonType: 'string',
+            enum: ['incomplete', 'complete', 'not_required']
+          },
           dependencies_requires: {
             bsonType: 'array',
             items: { bsonType: 'objectId' }
