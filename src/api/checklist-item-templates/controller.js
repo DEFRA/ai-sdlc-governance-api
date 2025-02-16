@@ -68,17 +68,19 @@ export const updateChecklistItemTemplateHandler = async (request, h) => {
   try {
     const now = new Date()
     const updatePayload = { ...request.payload }
+    const templateId = new ObjectId(request.params.id)
 
-    // Convert dependencies_requires to ObjectIds if present
+    // Convert dependencies_requires to ObjectIds if present and filter out self-dependency
     if (updatePayload.dependencies_requires) {
-      updatePayload.dependencies_requires =
-        updatePayload.dependencies_requires.map((id) => new ObjectId(id))
+      updatePayload.dependencies_requires = updatePayload.dependencies_requires
+        .map((id) => new ObjectId(id))
+        .filter((id) => !id.equals(templateId))
     }
 
     const result = await request.db
       .collection('checklistItemTemplates')
       .findOneAndUpdate(
-        { _id: new ObjectId(request.params.id) },
+        { _id: templateId },
         { $set: { ...updatePayload, updatedAt: now } },
         { returnDocument: 'after' }
       )

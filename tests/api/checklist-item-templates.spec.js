@@ -507,4 +507,42 @@ test.describe('Checklist Item Template API', () => {
     await request.delete(`/api/v1/workflow-templates/${differentWorkflowId}`)
     await request.delete(`/api/v1/governance-templates/${differentGovId}`)
   })
+
+  test('should filter out self-dependency when updating dependencies_requires', async ({
+    request
+  }) => {
+    // Create a template that will try to depend on itself
+    const templateResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Self Dependency Test Template ${uniqueId}`,
+          description: 'Template that will try to depend on itself',
+          type: 'approval',
+          workflowTemplateId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(templateResponse.ok()).toBeTruthy()
+    const template = await templateResponse.json()
+
+    // Try to update the template to depend on itself
+    const updateResponse = await request.put(
+      `/api/v1/checklist-item-templates/${template._id}`,
+      {
+        data: {
+          dependencies_requires: [template._id]
+        }
+      }
+    )
+    expect(updateResponse.ok()).toBeTruthy()
+    const updatedTemplate = await updateResponse.json()
+
+    // Verify dependencies_requires is empty since self-dependency was filtered out
+    expect(updatedTemplate.dependencies_requires).toHaveLength(0)
+
+    // Clean up
+    await request.delete(`/api/v1/checklist-item-templates/${template._id}`)
+  })
 })
