@@ -117,9 +117,20 @@ export const updateChecklistItemTemplateHandler = async (request, h) => {
 
 export const deleteChecklistItemTemplateHandler = async (request, h) => {
   try {
+    const templateId = new ObjectId(request.params.id)
+
+    // Remove this template from dependencies_requires arrays of other templates
+    await request.db
+      .collection('checklistItemTemplates')
+      .updateMany(
+        { dependencies_requires: templateId },
+        { $pull: { dependencies_requires: templateId } }
+      )
+
+    // Delete the template
     const result = await request.db
       .collection('checklistItemTemplates')
-      .deleteOne({ _id: new ObjectId(request.params.id) })
+      .deleteOne({ _id: templateId })
 
     if (result.deletedCount === 0) {
       throw Boom.notFound('Checklist item template not found')

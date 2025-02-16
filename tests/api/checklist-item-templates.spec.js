@@ -253,6 +253,84 @@ test.describe('Checklist Item Template API', () => {
     })
   })
 
+  test('should remove deleted template from dependencies_requires of other templates', async ({
+    request
+  }) => {
+    // Create template A that will be a dependency
+    const templateAResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Template A ${uniqueId}`,
+          description: 'This template will be deleted',
+          type: 'approval',
+          workflowTemplateId,
+          dependencies_requires: []
+        }
+      }
+    )
+    expect(templateAResponse.ok()).toBeTruthy()
+    const templateA = await templateAResponse.json()
+
+    // Create template B that depends on template A
+    const templateBResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Template B ${uniqueId}`,
+          description: 'This template depends on Template A',
+          type: 'approval',
+          workflowTemplateId,
+          dependencies_requires: [templateA._id]
+        }
+      }
+    )
+    expect(templateBResponse.ok()).toBeTruthy()
+    const templateB = await templateBResponse.json()
+
+    // Create template C that also depends on template A
+    const templateCResponse = await request.post(
+      '/api/v1/checklist-item-templates',
+      {
+        data: {
+          name: `Template C ${uniqueId}`,
+          description: 'This template also depends on Template A',
+          type: 'approval',
+          workflowTemplateId,
+          dependencies_requires: [templateA._id]
+        }
+      }
+    )
+    expect(templateCResponse.ok()).toBeTruthy()
+    const templateC = await templateCResponse.json()
+
+    // Delete template A
+    const deleteResponse = await request.delete(
+      `/api/v1/checklist-item-templates/${templateA._id}`
+    )
+    expect(deleteResponse.ok()).toBeTruthy()
+
+    // Verify template B no longer has template A in its dependencies
+    const templateBAfterResponse = await request.get(
+      `/api/v1/checklist-item-templates/${templateB._id}`
+    )
+    expect(templateBAfterResponse.ok()).toBeTruthy()
+    const templateBAfter = await templateBAfterResponse.json()
+    expect(templateBAfter.dependencies_requires).toHaveLength(0)
+
+    // Verify template C no longer has template A in its dependencies
+    const templateCAfterResponse = await request.get(
+      `/api/v1/checklist-item-templates/${templateC._id}`
+    )
+    expect(templateCAfterResponse.ok()).toBeTruthy()
+    const templateCAfter = await templateCAfterResponse.json()
+    expect(templateCAfter.dependencies_requires).toHaveLength(0)
+
+    // Clean up
+    await request.delete(`/api/v1/checklist-item-templates/${templateB._id}`)
+    await request.delete(`/api/v1/checklist-item-templates/${templateC._id}`)
+  })
+
   test('should filter checklist item templates by workflowTemplateId', async ({
     request
   }) => {
