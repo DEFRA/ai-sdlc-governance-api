@@ -5,7 +5,6 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { fileURLToPath } from 'url'
 import { config } from '../src/config/index.js'
-import { logger } from '../src/api/common/helpers/logging/logger.js'
 
 // Use __filename for potential future path resolution needs
 fileURLToPath(import.meta.url)
@@ -296,11 +295,12 @@ async function main() {
       console.log('Schema validations have been reset')
     }
   } catch (error) {
-    logger.error(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      'Fatal error occurred'
+    // eslint-disable-next-line no-console
+    console.error(
+      'Fatal error occurred:',
+      error instanceof Error ? error.message : 'Unknown error'
     )
-    throw error
+    process.exitCode = 1
   } finally {
     await mongo.close()
   }
@@ -346,12 +346,14 @@ async function resetSchemaValidations() {
     validationAction: 'error'
   })
 
-  logger.info('Schema validations reset successfully')
+  // eslint-disable-next-line no-console
+  console.log('Schema validations reset successfully')
   await client.close()
 }
 
 main().catch((error) => {
-  logger.error(
+  // eslint-disable-next-line no-console
+  console.error(
     { error: error instanceof Error ? error.message : 'Unknown error' },
     'Fatal error occurred'
   )
