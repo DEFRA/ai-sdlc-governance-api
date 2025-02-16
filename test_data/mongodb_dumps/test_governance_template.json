@@ -10,8 +10,43 @@
     }
   ],
   "workflowInstances": [],
-  "checklistItemInstances": [],
+  "projects": [],
+  "auditLogs": [],
   "mongo-locks": [],
+  "workflowTemplates": [
+    {
+      "_id": "67b1fd672104d8019b09583f",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "GDS Service Assessments",
+      "description": "Service assessment workflow",
+      "createdAt": "2025-02-16T14:59:51.010Z",
+      "updatedAt": "2025-02-16T14:59:51.010Z"
+    },
+    {
+      "_id": "67b1fd802104d8019b095840",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "GDS Spend Control",
+      "description": "Spend control workflow",
+      "createdAt": "2025-02-16T15:00:16.180Z",
+      "updatedAt": "2025-02-16T15:00:16.180Z"
+    },
+    {
+      "_id": "67b1fd922104d8019b095841",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "Service Readiness",
+      "description": "Service Readiness workflow",
+      "createdAt": "2025-02-16T15:00:34.978Z",
+      "updatedAt": "2025-02-16T15:00:34.978Z"
+    },
+    {
+      "_id": "67b1fda42104d8019b095842",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "Change Management",
+      "description": "Change Management Workflow",
+      "createdAt": "2025-02-16T15:00:52.184Z",
+      "updatedAt": "2025-02-16T15:00:52.184Z"
+    }
+  ],
   "checklistItemTemplates": [
     {
       "_id": "67b1fdcb2104d8019b095843",
@@ -61,8 +96,7 @@
         "67b1fe632104d8019b095845"
       ],
       "createdAt": "2025-02-16T15:09:02.788Z",
-      "updatedAt": "2025-02-16T21:45:51.707Z",
-      "description": ""
+      "updatedAt": "2025-02-16T21:45:51.707Z"
     },
     {
       "_id": "67b1ffbd6f1a39437f13686c",
@@ -175,44 +209,8 @@
         "67b2008a6f1a39437f136872"
       ],
       "createdAt": "2025-02-16T15:47:22.347Z",
-      "updatedAt": "2025-02-16T21:42:18.188Z",
-      "description": ""
+      "updatedAt": "2025-02-16T21:42:18.188Z"
     }
   ],
-  "auditLogs": [],
-  "workflowTemplates": [
-    {
-      "_id": "67b1fd672104d8019b09583f",
-      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
-      "name": "GDS Service Assessments",
-      "description": "Service assessment workflow",
-      "createdAt": "2025-02-16T14:59:51.010Z",
-      "updatedAt": "2025-02-16T14:59:51.010Z"
-    },
-    {
-      "_id": "67b1fd802104d8019b095840",
-      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
-      "name": "GDS Spend Control",
-      "description": "Spend control workflow",
-      "createdAt": "2025-02-16T15:00:16.180Z",
-      "updatedAt": "2025-02-16T15:00:16.180Z"
-    },
-    {
-      "_id": "67b1fd922104d8019b095841",
-      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
-      "name": "Service Readiness",
-      "description": "Service Readiness workflow",
-      "createdAt": "2025-02-16T15:00:34.978Z",
-      "updatedAt": "2025-02-16T15:00:34.978Z"
-    },
-    {
-      "_id": "67b1fda42104d8019b095842",
-      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
-      "name": "Change Management",
-      "description": "Change Management Workflow",
-      "createdAt": "2025-02-16T15:00:52.184Z",
-      "updatedAt": "2025-02-16T15:00:52.184Z"
-    }
-  ],
-  "projects": []
+  "checklistItemInstances": []
 }
