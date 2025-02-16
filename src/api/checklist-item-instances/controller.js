@@ -100,6 +100,11 @@ export const updateChecklistItemInstanceStatusHandler = async (request, h) => {
       throw Boom.notFound('Checklist item instance not found')
     }
 
+    // Convert ObjectIds to strings for response
+    result._id = result._id.toString()
+    result.workflowInstanceId = result.workflowInstanceId.toString()
+    result.checklistItemTemplateId = result.checklistItemTemplateId.toString()
+
     // Record audit log
     await recordAuditLog(
       request,
@@ -187,6 +192,11 @@ export const updateChecklistItemInstanceHandler = async (request, h) => {
     if (!result) {
       throw Boom.notFound('Checklist item instance not found')
     }
+
+    // Convert ObjectIds to strings for response
+    result._id = result._id.toString()
+    result.workflowInstanceId = result.workflowInstanceId.toString()
+    result.checklistItemTemplateId = result.checklistItemTemplateId.toString()
 
     // Record audit log if status changed
     if (updates.status && updates.status !== currentInstance.status) {
