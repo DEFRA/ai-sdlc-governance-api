@@ -13,7 +13,7 @@ export default defineConfig({
       Accept: 'application/json'
     }
   },
-  reporter: [['html'], ['list']],
+  reporter: [['list']],
   projects: [
     {
       name: 'api-tests',
