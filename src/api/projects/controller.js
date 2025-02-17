@@ -3,30 +3,37 @@ import Boom from '@hapi/boom'
 import { ObjectId } from 'mongodb'
 
 /**
- * Creates checklist item instances for a workflow instance
+ * Creates checklist item instances for all workflow instances
  * @param {import('mongodb').Db} db - MongoDB database instance
- * @param {import('mongodb').ObjectId} workflowInstanceId - ID of the workflow instance
- * @param {import('mongodb').ObjectId} workflowTemplateId - ID of the workflow template
+ * @param {import('mongodb').ObjectId[]} workflowInstanceIds - Array of workflow instance IDs
+ * @param {Map<string, import('mongodb').ObjectId>} workflowTemplateToInstanceMap - Map of workflow template IDs to instance IDs
  * @param {Set<string>} selectedWorkflowIds - Set of selected workflow template IDs
- * @returns {Promise<void>}
+ * @returns {Promise<Map<string, import('mongodb').ObjectId>>} Map of template IDs to instance IDs
  */
-async function createChecklistItemInstances(
+async function createAllChecklistItemInstances(
   db,
-  workflowInstanceId,
-  workflowTemplateId,
+  workflowInstanceIds,
+  workflowTemplateToInstanceMap,
   selectedWorkflowIds
 ) {
-  // Get all checklist item templates for this workflow
+  // Create a map to store template ID to instance ID mappings
+  const templateToInstanceMap = new Map()
+
+  // Get all templates for all selected workflows
   const templates = await db
     .collection('checklistItemTemplates')
-    .find({ workflowTemplateId })
+    .find({
+      workflowTemplateId: {
+        $in: Array.from(selectedWorkflowIds).map((id) => new ObjectId(id))
+      }
+    })
     .toArray()
-
-  // Create a map of template ID to instance ID for dependency mapping
-  const templateToInstanceMap = new Map()
 
   // Create instances for each template
   for (const template of templates) {
+    const workflowInstanceId = workflowTemplateToInstanceMap.get(
+      template.workflowTemplateId.toString()
+    )
     const instance = {
       workflowInstanceId,
       checklistItemTemplateId: template._id,
@@ -34,7 +41,7 @@ async function createChecklistItemInstances(
       description: template.description || '',
       type: template.type,
       status: 'incomplete',
-      dependencies_requires: [], // Will be populated after all instances are created
+      dependencies_requires: [], // Will be populated in second phase
       metadata: template.metadata || {},
       createdAt: new Date(),
       updatedAt: new Date()
@@ -46,13 +53,37 @@ async function createChecklistItemInstances(
     templateToInstanceMap.set(template._id.toString(), result.insertedId)
   }
 
-  // Update dependencies for each instance
+  return templateToInstanceMap
+}
+
+/**
+ * Updates dependencies for all checklist item instances
+ * @param {import('mongodb').Db} db - MongoDB database instance
+ * @param {Map<string, import('mongodb').ObjectId>} templateToInstanceMap - Map of template IDs to instance IDs
+ * @param {Set<string>} selectedWorkflowIds - Set of selected workflow template IDs
+ * @returns {Promise<void>}
+ */
+async function updateAllInstanceDependencies(
+  db,
+  templateToInstanceMap,
+  selectedWorkflowIds
+) {
+  // Get all templates with their dependencies
+  const templates = await db
+    .collection('checklistItemTemplates')
+    .find({
+      workflowTemplateId: {
+        $in: Array.from(selectedWorkflowIds).map((id) => new ObjectId(id))
+      }
+    })
+    .toArray()
+
+  // Update dependencies for each template's instance
   for (const template of templates) {
     if (
       template.dependencies_requires &&
       template.dependencies_requires.length > 0
     ) {
-      // Filter dependencies to only include those from selected workflows
       const validDependencies = []
 
       for (const depId of template.dependencies_requires) {
@@ -163,6 +194,7 @@ export const createProjectHandler = async (request, h) => {
     const selectedWorkflowIds = new Set(
       request.payload.selectedWorkflowTemplateIds.map((id) => id.toString())
     )
+    const workflowTemplateToInstanceMap = new Map()
 
     try {
       for (const template of workflowTemplates) {
@@ -186,26 +218,26 @@ export const createProjectHandler = async (request, h) => {
           _id: workflowResult.insertedId
         })
 
-        // Create checklist item instances for this workflow
-        try {
-          await createChecklistItemInstances(
-            request.db,
-            workflowResult.insertedId,
-            template._id,
-            selectedWorkflowIds
-          )
-        } catch (error) {
-          request.log(['error', 'projects', 'checklist-items'], {
-            msg: 'Failed to create checklist items for workflow',
-            workflowTemplateId: template._id,
-            error: error.message,
-            code: error.code,
-            codeName: error.codeName,
-            errInfo: error.errInfo
-          })
-          throw Boom.badRequest('Failed to create checklist items for workflow')
-        }
+        workflowTemplateToInstanceMap.set(
+          template._id.toString(),
+          workflowResult.insertedId
+        )
       }
+
+      // Phase 1: Create all checklist item instances
+      const templateToInstanceMap = await createAllChecklistItemInstances(
+        request.db,
+        workflowInstances.map((wi) => wi._id),
+        workflowTemplateToInstanceMap,
+        selectedWorkflowIds
+      )
+
+      // Phase 2: Update all dependencies
+      await updateAllInstanceDependencies(
+        request.db,
+        templateToInstanceMap,
+        selectedWorkflowIds
+      )
 
       return h
         .response({ ...project, _id: projectId, workflowInstances })
