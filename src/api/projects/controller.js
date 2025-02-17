@@ -31,11 +31,11 @@ async function createChecklistItemInstances(
       workflowInstanceId,
       checklistItemTemplateId: template._id,
       name: template.name,
-      description: template.description,
+      description: template.description || '',
       type: template.type,
       status: 'incomplete',
       dependencies_requires: [], // Will be populated after all instances are created
-      metadata: template.metadata,
+      metadata: template.metadata || {},
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -141,29 +141,37 @@ export const createProjectHandler = async (request, h) => {
 
     // Create the project
     const project = createProject(request.payload)
-    request.log(['debug', 'projects'], {
-      msg: 'Attempting to insert project',
-      project: JSON.stringify(project, (key, value) =>
-        value instanceof ObjectId ? value.toString() : value
-      )
-    })
+
+    // Insert the project
+    let projectId
     try {
       const result = await request.db.collection('projects').insertOne(project)
-      const projectId = result.insertedId
+      projectId = result.insertedId
+    } catch (error) {
+      request.log(['error', 'projects'], {
+        msg: 'Failed to insert project',
+        error: error.message,
+        code: error.code,
+        codeName: error.codeName,
+        errInfo: error.errInfo
+      })
+      throw Boom.badRequest('Failed to create project')
+    }
 
-      // Create workflow instances for each selected workflow template
-      const workflowInstances = []
-      const selectedWorkflowIds = new Set(
-        request.payload.selectedWorkflowTemplateIds.map((id) => id.toString())
-      )
+    // Create workflow instances
+    const workflowInstances = []
+    const selectedWorkflowIds = new Set(
+      request.payload.selectedWorkflowTemplateIds.map((id) => id.toString())
+    )
 
+    try {
       for (const template of workflowTemplates) {
         const workflowInstance = {
           projectId,
           workflowTemplateId: template._id,
           name: template.name,
-          description: template.description,
-          metadata: template.metadata,
+          description: template.description || '',
+          metadata: template.metadata || {},
           status: 'active',
           createdAt: new Date(),
           updatedAt: new Date()
@@ -179,20 +187,32 @@ export const createProjectHandler = async (request, h) => {
         })
 
         // Create checklist item instances for this workflow
-        await createChecklistItemInstances(
-          request.db,
-          workflowResult.insertedId,
-          template._id,
-          selectedWorkflowIds
-        )
+        try {
+          await createChecklistItemInstances(
+            request.db,
+            workflowResult.insertedId,
+            template._id,
+            selectedWorkflowIds
+          )
+        } catch (error) {
+          request.log(['error', 'projects', 'checklist-items'], {
+            msg: 'Failed to create checklist items for workflow',
+            workflowTemplateId: template._id,
+            error: error.message,
+            code: error.code,
+            codeName: error.codeName,
+            errInfo: error.errInfo
+          })
+          throw Boom.badRequest('Failed to create checklist items for workflow')
+        }
       }
 
       return h
         .response({ ...project, _id: projectId, workflowInstances })
         .code(201)
     } catch (error) {
-      request.log(['error', 'projects'], {
-        msg: 'MongoDB validation error details',
+      request.log(['error', 'projects', 'workflows'], {
+        msg: 'Failed to create workflow instances',
         error: error.message,
         code: error.code,
         codeName: error.codeName,
