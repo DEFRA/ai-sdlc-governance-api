@@ -1,0 +1,216 @@
+{
+  "governanceTemplates": [
+    {
+      "_id": "67b1fd2f2104d8019b09583e",
+      "version": "1.0",
+      "name": "Defra Service Governance",
+      "description": "To-be governance model",
+      "createdAt": "2025-02-16T14:58:55.332Z",
+      "updatedAt": "2025-02-16T14:58:55.332Z"
+    }
+  ],
+  "workflowInstances": [],
+  "projects": [],
+  "auditLogs": [],
+  "mongo-locks": [],
+  "workflowTemplates": [
+    {
+      "_id": "67b1fd672104d8019b09583f",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "GDS Service Assessments",
+      "description": "Service assessment workflow",
+      "createdAt": "2025-02-16T14:59:51.010Z",
+      "updatedAt": "2025-02-16T14:59:51.010Z"
+    },
+    {
+      "_id": "67b1fd802104d8019b095840",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "GDS Spend Control",
+      "description": "Spend control workflow",
+      "createdAt": "2025-02-16T15:00:16.180Z",
+      "updatedAt": "2025-02-16T15:00:16.180Z"
+    },
+    {
+      "_id": "67b1fd922104d8019b095841",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "Service Readiness",
+      "description": "Service Readiness workflow",
+      "createdAt": "2025-02-16T15:00:34.978Z",
+      "updatedAt": "2025-02-16T15:00:34.978Z"
+    },
+    {
+      "_id": "67b1fda42104d8019b095842",
+      "governanceTemplateId": "67b1fd2f2104d8019b09583e",
+      "name": "Change Management",
+      "description": "Change Management Workflow",
+      "createdAt": "2025-02-16T15:00:52.184Z",
+      "updatedAt": "2025-02-16T15:00:52.184Z"
+    }
+  ],
+  "checklistItemTemplates": [
+    {
+      "_id": "67b1fdcb2104d8019b095843",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Project Kickoff",
+      "description": "Starting point of project",
+      "type": "task",
+      "createdAt": "2025-02-16T15:01:31.233Z",
+      "updatedAt": "2025-02-16T15:01:31.233Z"
+    },
+    {
+      "_id": "67b1fdff2104d8019b095844",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Project Online created (PMO)",
+      "description": "PMO task to setup the project in Project Online",
+      "type": "task",
+      "dependencies_requires": ["67b1fdcb2104d8019b095843"],
+      "createdAt": "2025-02-16T15:02:23.959Z",
+      "updatedAt": "2025-02-16T15:02:23.959Z"
+    },
+    {
+      "_id": "67b1fe632104d8019b095845",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "Project Kickoff - Spend Control Form Created",
+      "description": "Creation of the initial spend control form",
+      "type": "document",
+      "createdAt": "2025-02-16T15:04:03.515Z",
+      "updatedAt": "2025-02-16T21:45:19.320Z",
+      "dependencies_requires": ["67b1fdff2104d8019b095844"]
+    },
+    {
+      "_id": "67b1ff236f1a39437f13686a",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "Project Kickoff - Portfolio Assurance Board Scheduled",
+      "type": "task",
+      "dependencies_requires": ["67b1fe632104d8019b095845"],
+      "createdAt": "2025-02-16T15:07:15.961Z",
+      "updatedAt": "2025-02-16T15:07:15.961Z"
+    },
+    {
+      "_id": "67b1ff8e6f1a39437f13686b",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "Project Kickoff - Portfolio Assurance Board (PAB) Approval",
+      "type": "approval",
+      "dependencies_requires": [
+        "67b1ff236f1a39437f13686a",
+        "67b1fe632104d8019b095845"
+      ],
+      "createdAt": "2025-02-16T15:09:02.788Z",
+      "updatedAt": "2025-02-16T21:45:51.707Z"
+    },
+    {
+      "_id": "67b1ffbd6f1a39437f13686c",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "Project Kickoff - Portfolio Assurance Board (PAB) - Needs service assessment decision",
+      "type": "approval",
+      "dependencies_requires": ["67b1ff8e6f1a39437f13686b"],
+      "createdAt": "2025-02-16T15:09:49.315Z",
+      "updatedAt": "2025-02-16T15:09:49.315Z"
+    },
+    {
+      "_id": "67b1ffe06f1a39437f13686d",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Start Discovery Phase",
+      "type": "task",
+      "dependencies_requires": [
+        "67b1ffbd6f1a39437f13686c",
+        "67b1fdff2104d8019b095844"
+      ],
+      "createdAt": "2025-02-16T15:10:24.221Z",
+      "updatedAt": "2025-02-16T15:29:05.379Z"
+    },
+    {
+      "_id": "67b2001d6f1a39437f13686e",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Equality Analysis",
+      "description": "Equality Analysis SharePoint Form submitted",
+      "type": "document",
+      "dependencies_requires": ["67b1ffe06f1a39437f13686d"],
+      "createdAt": "2025-02-16T15:11:25.462Z",
+      "updatedAt": "2025-02-16T15:11:25.462Z"
+    },
+    {
+      "_id": "67b2003d6f1a39437f13686f",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Slide deck created for end of discovery workshop",
+      "type": "document",
+      "dependencies_requires": ["67b1ffe06f1a39437f13686d"],
+      "createdAt": "2025-02-16T15:11:57.769Z",
+      "updatedAt": "2025-02-16T15:11:57.769Z"
+    },
+    {
+      "_id": "67b2005f6f1a39437f136870",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "End of Discovery workshops scheduled",
+      "description": "2-3 hour meeting with service assessors (service assessment-like)",
+      "type": "task",
+      "dependencies_requires": ["67b1ffe06f1a39437f13686d"],
+      "createdAt": "2025-02-16T15:12:31.318Z",
+      "updatedAt": "2025-02-16T15:42:55.514Z"
+    },
+    {
+      "_id": "67b200786f1a39437f136871",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "End of Discovery workshops completed",
+      "type": "approval",
+      "dependencies_requires": [
+        "67b2005f6f1a39437f136870",
+        "67b2003d6f1a39437f13686f"
+      ],
+      "createdAt": "2025-02-16T15:12:56.545Z",
+      "updatedAt": "2025-02-16T15:43:41.012Z"
+    },
+    {
+      "_id": "67b2008a6f1a39437f136872",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "End of Discovery Phase",
+      "type": "task",
+      "dependencies_requires": ["67b200786f1a39437f136871"],
+      "createdAt": "2025-02-16T15:13:14.552Z",
+      "updatedAt": "2025-02-16T15:13:14.552Z"
+    },
+    {
+      "_id": "67b20812294678094df63d3d",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "End Discovery - Spend control form updated",
+      "type": "task",
+      "dependencies_requires": ["67b2008a6f1a39437f136872"],
+      "createdAt": "2025-02-16T15:45:22.239Z",
+      "updatedAt": "2025-02-16T15:45:22.239Z"
+    },
+    {
+      "_id": "67b20840294678094df63d3e",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "End Discovery - Portfolio Approval Board (PAB) scheduled",
+      "type": "task",
+      "dependencies_requires": ["67b2008a6f1a39437f136872"],
+      "createdAt": "2025-02-16T15:46:08.397Z",
+      "updatedAt": "2025-02-16T15:46:08.397Z"
+    },
+    {
+      "_id": "67b20865294678094df63d3f",
+      "workflowTemplateId": "67b1fd802104d8019b095840",
+      "name": "End Discovery - Portfolio Assurance Board (PAB) Approval",
+      "type": "approval",
+      "dependencies_requires": [
+        "67b20840294678094df63d3e",
+        "67b20812294678094df63d3d"
+      ],
+      "createdAt": "2025-02-16T15:46:45.421Z",
+      "updatedAt": "2025-02-16T15:46:45.421Z"
+    },
+    {
+      "_id": "67b2088a294678094df63d40",
+      "workflowTemplateId": "67b1fd672104d8019b09583f",
+      "name": "Start Alpha Phase",
+      "type": "task",
+      "dependencies_requires": [
+        "67b20865294678094df63d3f",
+        "67b2008a6f1a39437f136872"
+      ],
+      "createdAt": "2025-02-16T15:47:22.347Z",
+      "updatedAt": "2025-02-16T21:42:18.188Z"
+    }
+  ],
+  "checklistItemInstances": []
+}

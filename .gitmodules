@@ -1,3 +1,6 @@
 [submodule "governance-admin-vault"]
 	path = governance-admin-vault
 	url = git@github.com:DEFRA/defra-ai-governance-tool-admin.git
+[submodule "defra-ai-sdlc-playbook"]
+	path = defra-ai-sdlc-playbook
+	url = git@github.com:DEFRA/defra-ai-sdlc.git

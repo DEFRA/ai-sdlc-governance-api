@@ -6,4 +6,6 @@ function createLogger() {
   return pino(loggerOptions)
 }
 
-export { createLogger }
+const logger = createLogger()
+
+export { createLogger, logger }

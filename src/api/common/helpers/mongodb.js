@@ -30,6 +30,7 @@ export const mongoDb = {
       const locker = new LockManager(db.collection('mongo-locks'))
 
       await createIndexes(db)
+      await createSchemaValidations(db)
 
       server.logger.info(`MongoDb connected to ${databaseName}`)
 
@@ -61,8 +62,201 @@ export const mongoDb = {
 async function createIndexes(db) {
   await db.collection('mongo-locks').createIndex({ id: 1 })
 
-  // Example of how to create a mongodb index. Remove as required
-  await db.collection('example-data').createIndex({ id: 1 })
+  // Create indexes for governance templates
+  await db.collection('governanceTemplates').createIndex({ name: 1 })
+  await db.collection('governanceTemplates').createIndex({ version: 1 })
+  await db
+    .collection('governanceTemplates')
+    .createIndex({ name: 1, version: 1 }, { unique: true })
+
+  // Create indexes for workflow templates
+  await db
+    .collection('workflowTemplates')
+    .createIndex({ governanceTemplateId: 1 })
+  await db.collection('workflowTemplates').createIndex({ name: 1 })
+  await db
+    .collection('workflowTemplates')
+    .createIndex({ governanceTemplateId: 1, name: 1 }, { unique: true })
+
+  // Create indexes for checklist item templates
+  await db
+    .collection('checklistItemTemplates')
+    .createIndex({ workflowTemplateId: 1 })
+}
+
+async function createSchemaValidations(db) {
+  const validations = [
+    {
+      collection: 'governanceTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['name', 'version', 'createdAt', 'updatedAt'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          version: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'projects',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'name',
+          'governanceTemplateId',
+          'selectedWorkflowTemplateIds',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string' },
+          governanceTemplateId: { bsonType: 'objectId' },
+          selectedWorkflowTemplateIds: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'workflowTemplates',
+      schema: {
+        bsonType: 'object',
+        required: ['governanceTemplateId', 'name', 'createdAt', 'updatedAt'],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          governanceTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'workflowInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'projectId',
+          'workflowTemplateId',
+          'name',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          projectId: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          metadata: { bsonType: 'object' },
+          status: { bsonType: 'string', enum: ['active', 'completed'] },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemTemplates',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'workflowTemplateId',
+          'name',
+          'type',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          type: { bsonType: 'string' },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    },
+    {
+      collection: 'checklistItemInstances',
+      schema: {
+        bsonType: 'object',
+        required: [
+          'workflowInstanceId',
+          'checklistItemTemplateId',
+          'name',
+          'type',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ],
+        additionalProperties: false,
+        properties: {
+          _id: { bsonType: 'objectId' },
+          workflowInstanceId: { bsonType: 'objectId' },
+          checklistItemTemplateId: { bsonType: 'objectId' },
+          name: { bsonType: 'string' },
+          description: { bsonType: 'string', pattern: '^.*$' },
+          type: { bsonType: 'string' },
+          status: {
+            bsonType: 'string',
+            enum: ['incomplete', 'complete', 'not_required']
+          },
+          dependencies_requires: {
+            bsonType: 'array',
+            items: { bsonType: 'objectId' }
+          },
+          metadata: { bsonType: 'object' },
+          createdAt: { bsonType: 'date' },
+          updatedAt: { bsonType: 'date' }
+        }
+      }
+    }
+  ]
+
+  for (const { collection, schema } of validations) {
+    try {
+      await db.command({
+        collMod: collection,
+        validator: { $jsonSchema: schema },
+        validationLevel: 'strict',
+        validationAction: 'error'
+      })
+    } catch (error) {
+      if (error.codeName === 'NamespaceNotFound') {
+        await db.createCollection(collection, {
+          validator: { $jsonSchema: schema },
+          validationLevel: 'strict',
+          validationAction: 'error'
+        })
+      } else {
+        throw error
+      }
+    }
+  }
 }
 
 /**
