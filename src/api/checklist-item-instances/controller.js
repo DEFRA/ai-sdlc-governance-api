@@ -274,6 +274,13 @@ export const updateChecklistItemInstanceHandler = async (request, h) => {
       updatedAt: new Date()
     }
 
+    // Prevent updating dependencies
+    if (updateData.dependencies_requires) {
+      throw Boom.badRequest(
+        '\n        Cannot update dependencies - they are managed by the system\n      '
+      )
+    }
+
     const result = await collection.findOneAndUpdate(
       { _id: instanceId },
       { $set: updateData },
