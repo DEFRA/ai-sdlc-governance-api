@@ -274,6 +274,21 @@ export const updateChecklistItemInstanceHandler = async (request, h) => {
       updatedAt: new Date()
     }
 
+    // Convert dependencies_requires to strings for validation
+    if (currentInstance.dependencies_requires) {
+      currentInstance.dependencies_requires =
+        currentInstance.dependencies_requires.map((id) =>
+          id instanceof ObjectId ? id.toString() : id
+        )
+    }
+
+    // Prevent updating dependencies
+    if (updateData.dependencies_requires) {
+      throw Boom.badRequest(
+        '\n        Cannot update dependencies - they are managed by the system\n      '
+      )
+    }
+
     const result = await collection.findOneAndUpdate(
       { _id: instanceId },
       { $set: updateData },
@@ -288,6 +303,11 @@ export const updateChecklistItemInstanceHandler = async (request, h) => {
     result._id = result._id.toString()
     result.workflowInstanceId = result.workflowInstanceId.toString()
     result.checklistItemTemplateId = result.checklistItemTemplateId.toString()
+    if (result.dependencies_requires) {
+      result.dependencies_requires = result.dependencies_requires.map((id) =>
+        id instanceof ObjectId ? id.toString() : id
+      )
+    }
 
     // Record audit log if status changed
     if (updates.status && updates.status !== currentInstance.status) {

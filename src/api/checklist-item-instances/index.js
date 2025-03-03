@@ -48,7 +48,9 @@ const checklistItemInstanceResponseSchema = baseChecklistItemSchema.keys({
         Joi.link('#ChecklistItemInstance')
       )
     )
-    .example(['60d21bbfe3d5d533d9fc1e4f'])
+    .description(
+      'Array of checklist item instance IDs that this item depends on'
+    )
 })
 
 const updateChecklistItemInstanceSchema = Joi.object({
@@ -58,9 +60,6 @@ const updateChecklistItemInstanceSchema = Joi.object({
   status: Joi.string()
     .valid('incomplete', 'complete', 'not_required')
     .description('New status for the checklist item'),
-  dependencies_requires: Joi.array().items(
-    Joi.string().pattern(/^[0-9a-fA-F]{24}$/)
-  ),
   metadata: Joi.object({
     // Approval type metadata
     approver: Joi.string().email().description('Email of the approver'),
