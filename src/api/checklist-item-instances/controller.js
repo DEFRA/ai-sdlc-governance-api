@@ -60,7 +60,7 @@ async function recordAuditLog(request, instanceId, oldStatus, newStatus) {
 }
 
 /**
- * Performs a topological sort of checklist items based on their dependencies
+ * Performs an intelligent topological sort of checklist items based on workflow name and status
  * @param {Array} items Array of checklist items to sort
  * @returns {Array} Sorted array of checklist items
  */
@@ -70,57 +70,114 @@ function topologicalSort(items) {
     return []
   }
 
+  // Helper function to check if an item is completed
+  const isCompleted = (item) =>
+    item.status === 'complete' || item.status === 'not_required'
+
+  // Helper function to check if all dependencies are completed
+  const areDependenciesMet = (item, itemMap) => {
+    if (!item.dependencies_requires?.length) {
+      return true
+    }
+    return item.dependencies_requires.every((depId) => {
+      const dep = itemMap.get(
+        typeof depId === 'string' ? depId : depId._id.toString()
+      )
+      return dep && isCompleted(dep)
+    })
+  }
+
   // Create a map of id to item for easy lookup
   const itemMap = new Map(items.map((item) => [item._id.toString(), item]))
 
-  // Create adjacency list representation of dependencies
-  const graph = new Map()
-  const inDegree = new Map()
+  // Group items by workflow name and status
+  const groupedItems = items.reduce((acc, item) => {
+    const workflowName = item.workflowName || ''
+    if (!acc.has(workflowName)) {
+      acc.set(workflowName, {
+        completed: [],
+        available: [],
+        blocked: []
+      })
+    }
+    const group = acc.get(workflowName)
 
-  // Initialize graphs
-  items.forEach((item) => {
-    const id = item._id.toString()
-    graph.set(id, [])
-    inDegree.set(id, 0)
-  })
+    if (isCompleted(item)) {
+      group.completed.push(item)
+    } else if (areDependenciesMet(item, itemMap)) {
+      group.available.push(item)
+    } else {
+      group.blocked.push(item)
+    }
+    return acc
+  }, new Map())
 
-  // Build dependency graph
-  items.forEach((item) => {
-    const id = item._id.toString()
-    if (item.dependencies_requires) {
-      const deps = Array.isArray(item.dependencies_requires)
-        ? item.dependencies_requires.map((d) =>
-            typeof d === 'string' ? d : d._id.toString()
-          )
-        : []
-      deps.forEach((depId) => {
-        if (graph.has(depId)) {
-          graph.get(depId).push(id)
-          inDegree.set(id, inDegree.get(id) + 1)
+  // Sort workflows by name
+  const sortedWorkflowNames = Array.from(groupedItems.keys()).sort()
+
+  // Helper function to topologically sort a group of items
+  const topologicalSortGroup = (items) => {
+    const graph = new Map()
+    const inDegree = new Map()
+
+    // Initialize graphs
+    items.forEach((item) => {
+      const id = item._id.toString()
+      graph.set(id, [])
+      inDegree.set(id, 0)
+    })
+
+    // Build dependency graph
+    items.forEach((item) => {
+      const id = item._id.toString()
+      if (item.dependencies_requires) {
+        const deps = Array.isArray(item.dependencies_requires)
+          ? item.dependencies_requires.map((d) =>
+              typeof d === 'string' ? d : d._id.toString()
+            )
+          : []
+        deps.forEach((depId) => {
+          if (graph.has(depId)) {
+            graph.get(depId).push(id)
+            inDegree.set(id, inDegree.get(id) + 1)
+          }
+        })
+      }
+    })
+
+    // Find all items with no dependencies
+    const queue = []
+    inDegree.forEach((count, id) => {
+      if (count === 0) queue.push(id)
+    })
+
+    // Process queue
+    const result = []
+    while (queue.length > 0) {
+      const id = queue.shift()
+      result.push(itemMap.get(id))
+
+      // Process items that depend on this one
+      graph.get(id).forEach((dependentId) => {
+        inDegree.set(dependentId, inDegree.get(dependentId) - 1)
+        if (inDegree.get(dependentId) === 0) {
+          queue.push(dependentId)
         }
       })
     }
-  })
 
-  // Find all items with no dependencies
-  const queue = []
-  inDegree.forEach((count, id) => {
-    if (count === 0) queue.push(id)
-  })
+    return result
+  }
 
-  // Process queue
+  // Combine all sorted groups in the desired order
   const result = []
-  while (queue.length > 0) {
-    const id = queue.shift()
-    result.push(itemMap.get(id))
-
-    // Process items that depend on this one
-    graph.get(id).forEach((dependentId) => {
-      inDegree.set(dependentId, inDegree.get(dependentId) - 1)
-      if (inDegree.get(dependentId) === 0) {
-        queue.push(dependentId)
-      }
-    })
+  for (const workflowName of sortedWorkflowNames) {
+    const group = groupedItems.get(workflowName)
+    result.push(
+      ...topologicalSortGroup(group.completed),
+      ...topologicalSortGroup(group.available),
+      ...topologicalSortGroup(group.blocked)
+    )
   }
 
   return result
