@@ -185,7 +185,9 @@ export const getAllWorkflowTemplatesHandler = async (request, h) => {
     const templates = await request.db
       .collection('workflowTemplates')
       .find(query)
-      .sort({ createdAt: -1 })
+      .sort(
+        request.query.governanceTemplateId ? { order: 1 } : { createdAt: -1 }
+      )
       .toArray()
     return h.response(templates).code(200)
   } catch (error) {
