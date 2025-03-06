@@ -400,4 +400,95 @@ test.describe('Workflow Template API', () => {
     await request.delete(`/api/v1/workflow-templates/${anotherWorkflowId}`)
     await request.delete(`/api/v1/governance-templates/${anotherGovId}`)
   })
+
+  test('should return workflow templates in order when filtering by governanceTemplateId', async ({
+    request
+  }) => {
+    // Create three workflow templates with different orders
+    const orderTestUniqueId = getUniqueId()
+
+    // Create workflow templates with specific orders
+    const workflowData1 = {
+      name: `Order Test Workflow 1 ${orderTestUniqueId}`,
+      description: 'First workflow for order test',
+      governanceTemplateId
+    }
+    const workflowData2 = {
+      name: `Order Test Workflow 2 ${orderTestUniqueId}`,
+      description: 'Second workflow for order test',
+      governanceTemplateId
+    }
+    const workflowData3 = {
+      name: `Order Test Workflow 3 ${orderTestUniqueId}`,
+      description: 'Third workflow for order test',
+      governanceTemplateId
+    }
+
+    // Create the workflow templates
+    const response1 = await request.post('/api/v1/workflow-templates', {
+      data: workflowData1
+    })
+    const data1 = await response1.json()
+    const workflowId1 = data1._id
+    const order1 = data1.order
+
+    const response2 = await request.post('/api/v1/workflow-templates', {
+      data: workflowData2
+    })
+    const data2 = await response2.json()
+    const workflowId2 = data2._id
+    const order2 = data2.order
+
+    const response3 = await request.post('/api/v1/workflow-templates', {
+      data: workflowData3
+    })
+    const data3 = await response3.json()
+    const workflowId3 = data3._id
+    const order3 = data3.order
+
+    // Verify the initial orders are sequential
+    expect(order2).toBe(order1 + 1)
+    expect(order3).toBe(order2 + 1)
+
+    // Reorder the templates: move the third template to the beginning
+    await request.put(`/api/v1/workflow-templates/${workflowId3}`, {
+      data: { order: 0 }
+    })
+
+    // Get all workflow templates filtered by governanceTemplateId
+    const filterResponse = await request.get(
+      `/api/v1/workflow-templates?governanceTemplateId=${governanceTemplateId}`
+    )
+    expect(filterResponse.ok()).toBeTruthy()
+    const filteredData = await filterResponse.json()
+
+    // Find our test templates in the filtered results
+    const testTemplates = filteredData.filter(
+      (template) =>
+        template._id === workflowId1 ||
+        template._id === workflowId2 ||
+        template._id === workflowId3
+    )
+
+    // Verify they are sorted by order
+    for (let i = 1; i < testTemplates.length; i++) {
+      expect(testTemplates[i - 1].order).toBeLessThanOrEqual(
+        testTemplates[i].order
+      )
+    }
+
+    // Verify the third template is now first in our test templates
+    const sortedIds = testTemplates.map((t) => t._id)
+    expect(sortedIds.indexOf(workflowId3)).toBeLessThan(
+      sortedIds.indexOf(workflowId1)
+    )
+    expect(sortedIds.indexOf(workflowId3)).toBeLessThan(
+      sortedIds.indexOf(workflowId2)
+    )
+
+    // Clean up the test workflow templates
+    await request.delete(`/api/v1/workflow-templates/${workflowId1}`)
+    await request.delete(`/api/v1/workflow-templates/${workflowId2}`)
+    await request.delete(`/api/v1/workflow-templates/${workflowId3}`)
+  })
 })
