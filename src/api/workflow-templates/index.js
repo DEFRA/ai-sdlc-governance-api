@@ -24,7 +24,8 @@ export default {
         handler: createWorkflowTemplateHandler,
         options: {
           tags: ['api', 'workflow-template'],
-          description: 'Create a new workflow template',
+          description:
+            'Create a new workflow template. The order is automatically calculated as max order + 1 for the governance template.',
           validate: {
             payload: createWorkflowTemplateSchema
           },
@@ -32,7 +33,8 @@ export default {
             'hapi-swagger': {
               responses: {
                 200: {
-                  description: 'Successfully created workflow template',
+                  description:
+                    'Successfully created workflow template. The order is automatically set to max order + 1 for the governance template.',
                   schema: Joi.object({
                     _id: Joi.string().example('60d21bbfe3d5d533d9fc1e4c'),
                     governanceTemplateId: Joi.string().example(
@@ -46,6 +48,7 @@ export default {
                       priority: 'high',
                       category: 'development'
                     }),
+                    order: Joi.number().integer().min(0).example(1),
                     createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
                     updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
@@ -88,6 +91,7 @@ export default {
                       priority: 'high',
                       category: 'development'
                     }),
+                    order: Joi.number().integer().min(0).example(1),
                     createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
                     updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
@@ -130,6 +134,7 @@ export default {
                       priority: 'high',
                       category: 'development'
                     }),
+                    order: Joi.number().integer().min(0).example(1),
                     createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
                     updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                   })
@@ -198,6 +203,7 @@ export default {
                         priority: 'high',
                         category: 'development'
                       }),
+                      order: Joi.number().integer().min(0).example(1),
                       createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
                       updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
                     })

@@ -20,6 +20,11 @@ const workflowInstanceResponseSchema = Joi.object({
     priority: 'high',
     category: 'validation'
   }),
+  order: Joi.number()
+    .integer()
+    .min(0)
+    .example(1)
+    .description('Manual ordering position for the workflow'),
   status: Joi.string().valid('active', 'completed').example('active'),
   createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
   updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')

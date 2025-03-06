@@ -19,7 +19,8 @@ export const createWorkflowTemplateSchema = Joi.object({
 export const updateWorkflowTemplateSchema = Joi.object({
   name: Joi.string(),
   description: Joi.string().allow(''),
-  metadata: Joi.object()
+  metadata: Joi.object(),
+  order: Joi.number().integer().min(0)
 }).min(1)
 
 export const idSchema = Joi.object({

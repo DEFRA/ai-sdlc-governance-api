@@ -13,7 +13,26 @@ export const createWorkflowTemplateHandler = async (request, h) => {
       throw Boom.notFound('Governance template not found')
     }
 
-    const template = createWorkflowTemplate(request.payload)
+    // Find the maximum order value for workflow templates with the same governance template ID
+    const maxOrderResult = await request.db
+      .collection('workflowTemplates')
+      .find({
+        governanceTemplateId: new ObjectId(request.payload.governanceTemplateId)
+      })
+      .sort({ order: -1 })
+      .limit(1)
+      .toArray()
+
+    // Calculate the new order value (max + 1 or 0 if no templates exist)
+    const maxOrder = maxOrderResult.length > 0 ? maxOrderResult[0].order : -1
+    const newOrder = maxOrder + 1
+
+    // Create the template with the calculated order
+    const template = createWorkflowTemplate({
+      ...request.payload,
+      order: newOrder
+    })
+
     const result = await request.db
       .collection('workflowTemplates')
       .insertOne(template)

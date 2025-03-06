@@ -204,6 +204,7 @@ export const createProjectHandler = async (request, h) => {
           name: template.name,
           description: template.description || '',
           metadata: template.metadata || {},
+          order: template.order || 0,
           status: 'active',
           createdAt: new Date(),
           updatedAt: new Date()

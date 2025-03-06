@@ -106,6 +106,19 @@ export const getAllGovernanceTemplatesHandler = async (request, h) => {
       .find({})
       .sort({ createdAt: -1 })
       .toArray()
+
+    // For each governance template, fetch and include its workflow templates
+    for (const template of templates) {
+      const workflowTemplates = await request.db
+        .collection('workflowTemplates')
+        .find({ governanceTemplateId: template._id })
+        .sort({ order: 1 }) // Sort by order field (ascending)
+        .toArray()
+
+      // Add the sorted workflow templates to the governance template
+      template.workflowTemplates = workflowTemplates
+    }
+
     return h.response(templates).code(200)
   } catch (error) {
     throw Boom.badRequest(error.message)
