@@ -415,6 +415,12 @@ export const getChecklistItemInstancesHandler = async (request, h) => {
 
     // Sort workflows based on their checklist items
     workflowInstances.sort((a, b) => {
+      // First sort by order field
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order
+      }
+
+      // Fall back to the old sorting method if order is not available
       const itemsA = itemsByWorkflow.get(a._id.toString()) || []
       const itemsB = itemsByWorkflow.get(b._id.toString()) || []
       return compareWorkflowsByItems(itemsA, itemsB)

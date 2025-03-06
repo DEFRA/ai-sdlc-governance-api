@@ -8,6 +8,7 @@ import { ObjectId } from 'mongodb'
  * @property {string} name - The name of the workflow (required)
  * @property {string} [description] - The description of the workflow
  * @property {object} [metadata] - Additional workflow configuration
+ * @property {number} [order] - Manual ordering position for the workflow
  * @property {string} status - Current status of the workflow (e.g., 'active', 'completed') (required)
  * @property {Date} createdAt - When the instance was created (required)
  * @property {Date} updatedAt - When the instance was last updated (required)
@@ -21,6 +22,7 @@ import { ObjectId } from 'mongodb'
  * @param {string} data.name - The name of the workflow
  * @param {string} [data.description] - The description of the workflow
  * @param {object} [data.metadata] - Additional workflow configuration
+ * @param {number} [data.order] - Manual ordering position for the workflow
  * @returns {Omit<WorkflowInstance, '_id'>}
  */
 export function createWorkflowInstance(data) {
@@ -37,6 +39,7 @@ export function createWorkflowInstance(data) {
     name: data.name,
     description: data.description,
     metadata: data.metadata ?? {},
+    order: data.order ?? 0,
     status: 'active',
     createdAt: now,
     updatedAt: now

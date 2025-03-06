@@ -2,6 +2,7 @@ import { MongoClient } from 'mongodb'
 import { LockManager } from 'mongo-locks'
 
 import { config } from '~/src/config/index.js'
+import { runMigrations } from '~/src/api/common/helpers/migrations/index.js'
 
 /**
  * @satisfies { import('@hapi/hapi').ServerRegisterPluginObject<*> }
@@ -31,6 +32,14 @@ export const mongoDb = {
 
       await createIndexes(db)
       await createSchemaValidations(db)
+
+      // Run migrations after schema validations
+      try {
+        await runMigrations(db, server.logger)
+      } catch (error) {
+        server.logger.error('Failed to run migrations', error)
+        throw error
+      }
 
       server.logger.info(`MongoDb connected to ${databaseName}`)
 
@@ -141,6 +150,7 @@ async function createSchemaValidations(db) {
           name: { bsonType: 'string' },
           description: { bsonType: 'string', pattern: '^.*$' },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
         }
@@ -166,6 +176,7 @@ async function createSchemaValidations(db) {
           name: { bsonType: 'string' },
           description: { bsonType: 'string', pattern: '^.*$' },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           status: { bsonType: 'string', enum: ['active', 'completed'] },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }

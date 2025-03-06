@@ -397,6 +397,7 @@ async function resetSchemaValidations() {
           name: { bsonType: 'string' },
           description: { bsonType: 'string', pattern: '^.*$' },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
         }
@@ -422,6 +423,7 @@ async function resetSchemaValidations() {
           name: { bsonType: 'string' },
           description: { bsonType: 'string', pattern: '^.*$' },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           status: { bsonType: 'string', enum: ['active', 'completed'] },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }

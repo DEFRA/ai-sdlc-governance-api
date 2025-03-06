@@ -15,6 +15,7 @@ export const createWorkflowInstanceSchema = Joi.object({
   name: Joi.string().required(),
   description: Joi.string().allow(''),
   metadata: Joi.object().default({}),
+  order: Joi.number().integer().min(0).default(0),
   status: Joi.string().valid('active', 'completed').default('active')
 })
 
@@ -22,6 +23,7 @@ export const updateWorkflowInstanceSchema = Joi.object({
   name: Joi.string(),
   description: Joi.string().allow(''),
   metadata: Joi.object(),
+  order: Joi.number().integer().min(0),
   status: Joi.string().valid('active', 'completed')
 }).min(1)
 
