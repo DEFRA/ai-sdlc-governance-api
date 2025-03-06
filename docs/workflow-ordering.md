@@ -94,6 +94,12 @@ You can update the `order` field of an existing workflow template:
 }
 ```
 
+### Deleting a Workflow Template
+
+When a workflow template is deleted, all remaining workflow templates in the same governance template with a higher order value will have their order decremented by 1. This ensures that the order remains sequential without gaps.
+
+For example, if you have workflow templates with orders 0, 1, 2, 3 and delete the template with order 1, the remaining templates will be reordered to 0, 1, 2.
+
 ### Retrieving Workflow Instances
 
 When retrieving workflow instances for a project, they are automatically sorted by their `order` field:
