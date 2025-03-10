@@ -43,6 +43,7 @@ async function createAllChecklistItemInstances(
       status: 'incomplete',
       dependencies_requires: [], // Will be populated in second phase
       metadata: template.metadata || {},
+      order: template.order || 0,
       createdAt: new Date(),
       updatedAt: new Date()
     }

@@ -29,7 +29,8 @@ export const updateChecklistItemInstanceSchema = Joi.object({
   type: Joi.string().valid('approval', 'document', 'task'),
   status: Joi.string().valid('incomplete', 'complete', 'not_required'),
   metadata: Joi.object(),
-  dependencies_requires: Joi.array().items(objectIdSchema)
+  dependencies_requires: Joi.array().items(objectIdSchema),
+  order: Joi.number().integer().min(0)
 }).min(1)
 
 export const idSchema = Joi.object({

@@ -206,6 +206,7 @@ async function createSchemaValidations(db) {
             items: { bsonType: 'objectId' }
           },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
         }
@@ -241,6 +242,7 @@ async function createSchemaValidations(db) {
             items: { bsonType: 'objectId' }
           },
           metadata: { bsonType: 'object' },
+          order: { bsonType: 'int' },
           createdAt: { bsonType: 'date' },
           updatedAt: { bsonType: 'date' }
         }
