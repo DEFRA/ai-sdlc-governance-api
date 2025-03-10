@@ -491,4 +491,52 @@ test.describe('Workflow Template API', () => {
     await request.delete(`/api/v1/workflow-templates/${workflowId2}`)
     await request.delete(`/api/v1/workflow-templates/${workflowId3}`)
   })
+
+  test('should prevent duplicate order numbers', async ({ request }) => {
+    // Create first workflow template
+    const workflowData1 = {
+      name: `Test Workflow Template 1 ${uniqueId}`,
+      description: 'Test workflow template 1',
+      governanceTemplateId
+    }
+
+    const response1 = await request.post('/api/v1/workflow-templates', {
+      data: workflowData1
+    })
+    expect(response1.ok()).toBeTruthy()
+    const data1 = await response1.json()
+    const workflowId1 = data1._id
+    const order1 = data1.order
+
+    // Create second workflow template
+    const workflowData2 = {
+      name: `Test Workflow Template 2 ${uniqueId}`,
+      description: 'Test workflow template 2',
+      governanceTemplateId
+    }
+
+    const response2 = await request.post('/api/v1/workflow-templates', {
+      data: workflowData2
+    })
+    expect(response2.ok()).toBeTruthy()
+    const data2 = await response2.json()
+    const workflowId2 = data2._id
+
+    // Try to update second template to have same order as first
+    const updateResponse = await request.put(
+      `/api/v1/workflow-templates/${workflowId2}`,
+      {
+        data: { order: order1 }
+      }
+    )
+    expect(updateResponse.ok()).toBeFalsy()
+    expect(updateResponse.status()).toBe(400)
+
+    const errorData = await updateResponse.json()
+    expect(errorData.message).toBe('Duplicate order number detected')
+
+    // Clean up
+    await request.delete(`/api/v1/workflow-templates/${workflowId1}`)
+    await request.delete(`/api/v1/workflow-templates/${workflowId2}`)
+  })
 })

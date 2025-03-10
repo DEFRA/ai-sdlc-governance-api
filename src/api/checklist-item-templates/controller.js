@@ -2,6 +2,49 @@ import { createChecklistItemTemplate } from './model.js'
 import Boom from '@hapi/boom'
 import { ObjectId } from 'mongodb'
 
+/**
+ * Checks if there are any duplicate orders in the checklist item templates
+ * @param {object} db - MongoDB database instance
+ * @param {import('mongodb').ObjectId} workflowTemplateId - Workflow template ID
+ * @param {number} order - Order to check
+ * @param {import('mongodb').ObjectId} [excludeId] - Template ID to exclude from check
+ * @returns {Promise<boolean>} - True if duplicate found
+ */
+async function hasDuplicateOrder(db, workflowTemplateId, order, excludeId) {
+  const query = {
+    workflowTemplateId,
+    order
+  }
+
+  if (excludeId) {
+    query._id = { $ne: excludeId }
+  }
+
+  const duplicate = await db.collection('checklistItemTemplates').findOne(query)
+  return !!duplicate
+}
+
+/**
+ * Resequences all orders to ensure they are sequential starting from 0
+ * @param {object} db - MongoDB database instance
+ * @param {import('mongodb').ObjectId} workflowTemplateId - Workflow template ID
+ */
+async function resequenceOrders(db, workflowTemplateId) {
+  // Get all templates ordered by current order
+  const templates = await db
+    .collection('checklistItemTemplates')
+    .find({ workflowTemplateId })
+    .sort({ order: 1 })
+    .toArray()
+
+  // Update each template with its new sequential order
+  for (let i = 0; i < templates.length; i++) {
+    await db
+      .collection('checklistItemTemplates')
+      .updateOne({ _id: templates[i]._id }, { $set: { order: i } })
+  }
+}
+
 export const createChecklistItemTemplateHandler = async (request, h) => {
   try {
     // Verify workflowTemplateId exists
@@ -26,6 +69,16 @@ export const createChecklistItemTemplateHandler = async (request, h) => {
     // Calculate the new order value (max + 1 or 0 if no templates exist)
     const maxOrder = maxOrderResult.length > 0 ? maxOrderResult[0].order : -1
     const newOrder = maxOrder + 1
+
+    // Check for duplicate order
+    const hasDuplicate = await hasDuplicateOrder(
+      request.db,
+      new ObjectId(request.payload.workflowTemplateId),
+      newOrder
+    )
+    if (hasDuplicate) {
+      throw Boom.badRequest('Duplicate order number detected')
+    }
 
     // Create the template with the calculated order
     const template = createChecklistItemTemplate({
@@ -134,42 +187,86 @@ export const updateChecklistItemTemplateHandler = async (request, h) => {
           { $inc: { order: 1 } }
         )
       }
-    }
 
-    const result = await request.db
-      .collection('checklistItemTemplates')
-      .findOneAndUpdate(
-        { _id: templateId },
-        { $set: { ...updatePayload, updatedAt: now } },
-        { returnDocument: 'after' }
-      )
-
-    if (!result) {
-      throw Boom.notFound('Checklist item template not found')
-    }
-
-    // If there are dependencies, populate them
-    if (
-      result.dependencies_requires &&
-      result.dependencies_requires.length > 0
-    ) {
-      const dependencies = await request.db
+      // Update the checklist item template
+      await request.db
         .collection('checklistItemTemplates')
-        .find({ _id: { $in: result.dependencies_requires } })
+        .findOneAndUpdate(
+          { _id: templateId },
+          { $set: { ...updatePayload, updatedAt: now } }
+        )
+
+      // Resequence all orders to ensure they are sequential
+      await resequenceOrders(request.db, currentTemplate.workflowTemplateId)
+
+      // Get the updated template with the final order and populate dependencies
+      const result = await request.db
+        .collection('checklistItemTemplates')
+        .findOne({ _id: templateId })
+
+      if (!result) {
+        throw Boom.notFound('Checklist item template not found')
+      }
+
+      // If there are dependencies, populate them
+      if (
+        result.dependencies_requires &&
+        result.dependencies_requires.length > 0
+      ) {
+        const dependencies = await request.db
+          .collection('checklistItemTemplates')
+          .find({ _id: { $in: result.dependencies_requires } })
+          .toArray()
+
+        result.dependencies_requires = dependencies
+      }
+
+      // Find all templates that require this template
+      const requiredBy = await request.db
+        .collection('checklistItemTemplates')
+        .find({ dependencies_requires: result._id })
         .toArray()
 
-      result.dependencies_requires = dependencies
+      result.dependencies_requiredBy = requiredBy
+
+      return h.response(result).code(200)
+    } else {
+      // If not updating order, just update the template normally
+      const result = await request.db
+        .collection('checklistItemTemplates')
+        .findOneAndUpdate(
+          { _id: templateId },
+          { $set: { ...updatePayload, updatedAt: now } },
+          { returnDocument: 'after' }
+        )
+
+      if (!result) {
+        throw Boom.notFound('Checklist item template not found')
+      }
+
+      // If there are dependencies, populate them
+      if (
+        result.dependencies_requires &&
+        result.dependencies_requires.length > 0
+      ) {
+        const dependencies = await request.db
+          .collection('checklistItemTemplates')
+          .find({ _id: { $in: result.dependencies_requires } })
+          .toArray()
+
+        result.dependencies_requires = dependencies
+      }
+
+      // Find all templates that require this template
+      const requiredBy = await request.db
+        .collection('checklistItemTemplates')
+        .find({ dependencies_requires: result._id })
+        .toArray()
+
+      result.dependencies_requiredBy = requiredBy
+
+      return h.response(result).code(200)
     }
-
-    // Find all templates that require this template
-    const requiredBy = await request.db
-      .collection('checklistItemTemplates')
-      .find({ dependencies_requires: result._id })
-      .toArray()
-
-    result.dependencies_requiredBy = requiredBy
-
-    return h.response(result).code(200)
   } catch (error) {
     if (error.isBoom) throw error
     throw Boom.badRequest(error.message)
