@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb'
  * @property {string} type - Type of checklist item (e.g. 'approval', 'document', 'task') (required)
  * @property {import('mongodb').ObjectId[]} dependencies_requires - Array of checklist item template IDs that this item depends on
  * @property {object} [metadata] - Additional configuration
+ * @property {number} [order] - Manual ordering position for the checklist item
  * @property {Date} createdAt - When the template was created (required)
  * @property {Date} updatedAt - When the template was last updated (required)
  */
@@ -22,6 +23,7 @@ import { ObjectId } from 'mongodb'
  * @param {string} [data.description] - Detailed description
  * @param {string[]} [data.dependencies_requires] - Array of checklist item template IDs that this item depends on
  * @param {object} [data.metadata] - Additional configuration
+ * @param {number} data.order - Manual ordering position for the checklist item
  * @returns {Omit<ChecklistItemTemplate, '_id'>}
  */
 export function createChecklistItemTemplate(data) {
@@ -38,6 +40,7 @@ export function createChecklistItemTemplate(data) {
       typeof id === 'string' ? new ObjectId(id) : id
     ),
     metadata: data.metadata ?? {},
+    order: data.order,
     createdAt: now,
     updatedAt: now
   }

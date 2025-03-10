@@ -13,8 +13,26 @@ export const createChecklistItemTemplateHandler = async (request, h) => {
       throw Boom.notFound('Workflow template not found')
     }
 
-    // Create the template
-    const template = createChecklistItemTemplate(request.payload)
+    // Find the maximum order value for checklist item templates with the same workflow template ID
+    const maxOrderResult = await request.db
+      .collection('checklistItemTemplates')
+      .find({
+        workflowTemplateId: new ObjectId(request.payload.workflowTemplateId)
+      })
+      .sort({ order: -1 })
+      .limit(1)
+      .toArray()
+
+    // Calculate the new order value (max + 1 or 0 if no templates exist)
+    const maxOrder = maxOrderResult.length > 0 ? maxOrderResult[0].order : -1
+    const newOrder = maxOrder + 1
+
+    // Create the template with the calculated order
+    const template = createChecklistItemTemplate({
+      ...request.payload,
+      order: newOrder
+    })
+
     const result = await request.db
       .collection('checklistItemTemplates')
       .insertOne(template)
@@ -70,11 +88,52 @@ export const updateChecklistItemTemplateHandler = async (request, h) => {
     const updatePayload = { ...request.payload }
     const templateId = new ObjectId(request.params.id)
 
+    // Get the current checklist item template to check if order is changing
+    const currentTemplate = await request.db
+      .collection('checklistItemTemplates')
+      .findOne({ _id: templateId })
+
+    if (!currentTemplate) {
+      throw Boom.notFound('Checklist item template not found')
+    }
+
     // Convert dependencies_requires to ObjectIds if present and filter out self-dependency
     if (updatePayload.dependencies_requires) {
       updatePayload.dependencies_requires = updatePayload.dependencies_requires
         .map((id) => new ObjectId(id))
         .filter((id) => !id.equals(templateId))
+    }
+
+    // Check if order is being updated
+    if (
+      updatePayload.order !== undefined &&
+      updatePayload.order !== currentTemplate.order
+    ) {
+      const newOrder = updatePayload.order
+      const oldOrder = currentTemplate.order
+
+      // Update other checklist item templates' order based on the direction of movement
+      if (newOrder > oldOrder) {
+        // Moving down in the list (increasing order value)
+        // Decrement order for templates with order > oldOrder and <= newOrder
+        await request.db.collection('checklistItemTemplates').updateMany(
+          {
+            workflowTemplateId: currentTemplate.workflowTemplateId,
+            order: { $gt: oldOrder, $lte: newOrder }
+          },
+          { $inc: { order: -1 } }
+        )
+      } else if (newOrder < oldOrder) {
+        // Moving up in the list (decreasing order value)
+        // Increment order for templates with order >= newOrder and < oldOrder
+        await request.db.collection('checklistItemTemplates').updateMany(
+          {
+            workflowTemplateId: currentTemplate.workflowTemplateId,
+            order: { $gte: newOrder, $lt: oldOrder }
+          },
+          { $inc: { order: 1 } }
+        )
+      }
     }
 
     const result = await request.db
@@ -121,6 +180,18 @@ export const deleteChecklistItemTemplateHandler = async (request, h) => {
   try {
     const templateId = new ObjectId(request.params.id)
 
+    // Get the checklist item template to be deleted
+    const template = await request.db
+      .collection('checklistItemTemplates')
+      .findOne({ _id: templateId })
+
+    if (!template) {
+      throw Boom.notFound('Checklist item template not found')
+    }
+
+    // Store the order and workflowTemplateId for reordering
+    const { order, workflowTemplateId } = template
+
     // Remove this template from dependencies_requires arrays of other templates
     await request.db
       .collection('checklistItemTemplates')
@@ -137,6 +208,15 @@ export const deleteChecklistItemTemplateHandler = async (request, h) => {
     if (result.deletedCount === 0) {
       throw Boom.notFound('Checklist item template not found')
     }
+
+    // Reorder remaining checklist item templates
+    await request.db.collection('checklistItemTemplates').updateMany(
+      {
+        workflowTemplateId,
+        order: { $gt: order }
+      },
+      { $inc: { order: -1 } }
+    )
 
     return h.response().code(204)
   } catch (error) {
@@ -175,7 +255,7 @@ export const getAllChecklistItemTemplatesHandler = async (request, h) => {
     const templates = await request.db
       .collection('checklistItemTemplates')
       .find(query)
-      .sort({ createdAt: -1 })
+      .sort({ order: 1 }) // Sort by order instead of createdAt
       .toArray()
 
     // If there are templates with dependencies, populate them

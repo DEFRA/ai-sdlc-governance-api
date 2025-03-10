@@ -35,6 +35,11 @@ const baseChecklistItemSchema = Joi.object({
       completedDate: '2024-03-20T10:00:00.000Z'
     })
     .description('Additional configuration based on checklist item type'),
+  order: Joi.number()
+    .integer()
+    .min(0)
+    .example(1)
+    .description('Manual ordering position for the checklist item'),
   createdAt: Joi.date().example('2024-03-20T10:00:00.000Z'),
   updatedAt: Joi.date().example('2024-03-20T10:00:00.000Z')
 }).id('ChecklistItemInstance')

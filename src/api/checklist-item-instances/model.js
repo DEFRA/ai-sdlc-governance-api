@@ -11,6 +11,7 @@ import { ObjectId } from 'mongodb'
  * @property {string} status - Current status (e.g. 'incomplete', 'complete', 'not_required') (required)
  * @property {import('mongodb').ObjectId[]} dependencies_requires - Array of checklist item instance IDs that this item depends on
  * @property {object} [metadata] - Additional configuration
+ * @property {number} [order] - Manual ordering position for the checklist item
  * @property {Date} createdAt - When the instance was created (required)
  * @property {Date} updatedAt - When the instance was last updated (required)
  */
@@ -25,6 +26,7 @@ import { ObjectId } from 'mongodb'
  * @param {string} data.type - Type of checklist item
  * @param {string[]} [data.dependencies_requires] - Array of checklist item instance IDs that this item depends on
  * @param {object} [data.metadata] - Additional configuration
+ * @param {number} [data.order] - Manual ordering position for the checklist item
  * @returns {Omit<ChecklistItemInstance, '_id'>}
  */
 export function createChecklistItemInstance(data) {
@@ -46,6 +48,7 @@ export function createChecklistItemInstance(data) {
       typeof id === 'string' ? new ObjectId(id) : id
     ),
     metadata: data.metadata ?? {},
+    order: data.order ?? 0,
     createdAt: now,
     updatedAt: now
   }
