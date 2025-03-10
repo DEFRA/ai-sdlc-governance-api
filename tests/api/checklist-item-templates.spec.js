@@ -798,4 +798,54 @@ test.describe('Checklist Item Template API', () => {
     await request.delete(`/api/v1/checklist-item-templates/${checklistId2}`)
     await request.delete(`/api/v1/checklist-item-templates/${checklistId3}`)
   })
+
+  test('should prevent duplicate order numbers', async ({ request }) => {
+    // Create first checklist item template
+    const checklistData1 = {
+      name: `Test Checklist Item Template 1 ${uniqueId}`,
+      description: 'Test checklist item template 1',
+      type: 'approval',
+      workflowTemplateId
+    }
+
+    const response1 = await request.post('/api/v1/checklist-item-templates', {
+      data: checklistData1
+    })
+    expect(response1.ok()).toBeTruthy()
+    const data1 = await response1.json()
+    const checklistId1 = data1._id
+    const order1 = data1.order
+
+    // Try to update another template to have the same order
+    const checklistData2 = {
+      name: `Test Checklist Item Template 2 ${uniqueId}`,
+      description: 'Test checklist item template 2',
+      type: 'approval',
+      workflowTemplateId
+    }
+
+    const response2 = await request.post('/api/v1/checklist-item-templates', {
+      data: checklistData2
+    })
+    expect(response2.ok()).toBeTruthy()
+    const data2 = await response2.json()
+    const checklistId2 = data2._id
+
+    // Try to update second template to have same order as first
+    const updateResponse = await request.put(
+      `/api/v1/checklist-item-templates/${checklistId2}`,
+      {
+        data: { order: order1 }
+      }
+    )
+    expect(updateResponse.ok()).toBeFalsy()
+    expect(updateResponse.status()).toBe(400)
+
+    const errorData = await updateResponse.json()
+    expect(errorData.message).toBe('Duplicate order number detected')
+
+    // Clean up
+    await request.delete(`/api/v1/checklist-item-templates/${checklistId1}`)
+    await request.delete(`/api/v1/checklist-item-templates/${checklistId2}`)
+  })
 })
